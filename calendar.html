@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Calendar — follow-ups, activities, releases — Toyota CRM Silang Cavite">
+  <meta name="theme-color" content="#eb0a1e">
+  <title>Calendar · Toyota CRM</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/calendar.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="calendar">
+  <main class="content">
+    <div class="cal-layout">
+      <div>
+        <div class="cal-tools">
+          <div class="cal-nav">
+            <button type="button" class="btn icon ghost js-mprev" aria-label="Previous month"></button>
+            <span class="cal-title" id="cal-title"></span>
+            <button type="button" class="btn icon ghost js-mnext" aria-label="Next month"></button>
+            <button type="button" class="btn ghost js-mtoday">Today</button>
+          </div>
+          <div class="legend">
+            <span class="lg ev-c-followup"><i></i> Follow-up</span>
+            <span class="lg ev-c-activity"><i></i> Activity</span>
+            <span class="lg ev-c-testdrive"><i></i> Test Drive</span>
+            <span class="lg ev-c-meeting"><i></i> Meeting</span>
+            <span class="lg ev-c-financing"><i></i> Financing</span>
+            <span class="lg ev-c-reservation"><i></i> Reservation</span>
+            <span class="lg ev-c-payment"><i></i> Payment</span>
+            <span class="lg ev-c-release"><i></i> Release</span>
+            <span class="lg ev-c-birthday"><i></i> Birthday</span>
+            <span class="lg ev-c-anniv"><i></i> Anniversary</span>
+            <span class="lg ev-c-holiday"><i></i> Holiday</span>
+          </div>
+        </div>
+        <div class="cal-grid-wrap">
+          <div class="cal-week head">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div id="cal-grid"></div>
+        </div>
+      </div>
+      <div class="cal-side">
+        <div class="card"><div class="card-body">
+          <h3>Today</h3><div class="ev-list" id="cal-today"></div>
+        </div></div>
+        <div class="card"><div class="card-body">
+          <h3>Next 7 Days</h3><div class="ev-list" id="cal-7"></div>
+        </div></div>
+        <div class="card"><div class="card-body">
+          <h3>Next 30 Days</h3><div class="ev-list" id="cal-30"></div>
+        </div></div>
+        <div class="card"><div class="card-body">
+          <h3>Holidays This Month</h3><div class="ev-list" id="cal-holidays"></div>
+        </div></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/leadview.js"></script>
+  <script src="js/calendar.js"></script>
+</body>
+</html>

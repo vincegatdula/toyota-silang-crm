@@ -1,0 +1,73 @@
+/* ============================================================
+   Toyota CRM — leads.css  (leads, archive, lead detail)
+   ============================================================ */
+.leads-toolbar { position: relative; }
+.duedate-nowrap { white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.duedate.overdue { color: var(--status-hot); font-weight: 700; }
+.duedate.today { color: var(--status-warm); font-weight: 700; }
+
+/* mobile card list for leads */
+.lead-card-list { display: none; flex-direction: column; gap: 10px; }
+.lead-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 12px 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px;
+}
+.lead-card:hover { border-color: var(--red); }
+.lead-card .lc-top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.lead-card .lc-name { font-weight: 650; font-size: 14px; }
+.lead-card .lc-veh { color: var(--muted); font-size: 12.5px; }
+.lead-card .lc-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lead-card .lc-meta { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); padding-top: 6px; border-top: 1px dashed var(--line-2); }
+
+/* ============================ LEAD DETAIL ============================ */
+.ll-head { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.ll-id { font-family: var(--mono); font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.ll-name { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.ll-veh { display: flex; align-items: center; gap: 7px; color: var(--ink-2); font-size: 13.5px; }
+.ll-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.ll-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.ll-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 24px; }
+.ll-field { min-width: 0; }
+.ll-field .llf-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 650; margin-bottom: 1px; }
+.ll-field .llf-val { font-size: 13.5px; color: var(--ink); word-break: break-word; }
+.ll-field .llf-val.muted-val { color: var(--muted); }
+
+.ll-section { padding: 14px 16px; }
+.ll-section + .ll-section { border-top: 1px solid var(--line-2); }
+.ll-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+.ll-section h4 svg { color: var(--red); }
+
+.act-item { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 10px 12px; display: flex; gap: 11px; align-items: flex-start; }
+.act-item + .act-item { margin-top: 8px; }
+.act-item .act-check { flex: none; width: 18px; height: 18px; margin-top: 1px; accent-color: var(--red); cursor: pointer; }
+.act-item.done { opacity: .6; }
+.act-item.done .act-title { text-decoration: line-through; }
+.act-body { flex: 1; min-width: 0; }
+.act-title { font-weight: 600; font-size: 13px; }
+.act-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 3px; font-size: 11.5px; color: var(--muted); }
+.act-notes { margin-top: 6px; font-size: 12.5px; color: var(--ink-2); }
+.act-kebab { flex: none; position: relative; }
+
+.ll-tabs-body { padding: 16px; }
+.timeline { position: relative; padding-left: 20px; }
+.timeline::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; background: var(--line); }
+.tl-item { position: relative; padding: 0 0 14px 12px; }
+.tl-item::before { content: ""; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--surface); border: 2px solid var(--muted); }
+.tl-item.tl-good::before { border-color: #22c55e; }
+.tl-item.tl-bad::before { border-color: var(--status-hot); }
+.tl-date { font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+.tl-title { font-weight: 600; font-size: 13px; }
+
+.stage-select-card { padding: 4px 8px; font-size: 12px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink); cursor: pointer; max-width: 190px; }
+
+.view-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* activity select in lead detail */
+.act-type-badge { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 2px 8px; border-radius: 6px; background: var(--line-2); color: var(--ink-2); }
+
+/* ============================ ARCHIVED ============================ */
+.archive-restore { color: var(--status-approved); }
+.archive-del { color: var(--status-hot); }
+.arch-title { font-weight: 650; }
+.arch-date { font-family: var(--mono); font-size: 12px; color: var(--muted); }

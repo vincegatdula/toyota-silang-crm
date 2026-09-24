@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Settings & data management — Toyota CRM Silang Cavite">
+  <meta name="theme-color" content="#eb0a1e">
+  <title>Settings · Toyota CRM</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="settings">
+  <main class="content">
+    <div class="page-head">
+      <div>
+        <h2>Settings</h2>
+        <div class="sub">Configuration, labels and data management</div>
+      </div>
+    </div>
+
+    <div class="set-grid">
+      <div class="set-nav" id="set-nav">
+        <button type="button" class="sn active" data-panel="general">General</button>
+        <button type="button" class="sn" data-panel="sources">Lead Sources</button>
+        <button type="button" class="sn" data-panel="statuses">Statuses</button>
+        <button type="button" class="sn" data-panel="stages">Pipeline Stages</button>
+        <button type="button" class="sn" data-panel="priorities">Priorities</button>
+        <button type="button" class="sn" data-panel="acttypes">Activity Types</button>
+        <button type="button" class="sn" data-panel="vehicles">Vehicle Models</button>
+        <button type="button" class="sn" data-panel="variants">Variants</button>
+        <button type="button" class="sn" data-panel="colors">Colors</button>
+        <button type="button" class="sn" data-panel="holidays">Holidays</button>
+        <button type="button" class="sn" data-panel="data">Backup & Data</button>
+        <button type="button" class="sn" data-panel="about">About</button>
+      </div>
+
+      <div class="set-panel">
+        <!-- GENERAL -->
+        <section class="card" id="p-general">
+          <div class="card-head"><h2>General</h2></div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="field"><label>Dealer Name</label><input type="text" id="g-dealer"></div>
+              <div class="field"><label>Salesperson (default)</label><input type="text" id="g-salesperson"></div>
+              <div class="field"><label>Working Days / Month <small class="muted">(fallback)</small></label><input type="number" id="g-wd" min="1" max="31"></div>
+              <div class="field"><label>Closing Ratio <small class="muted">%</small></label><input type="number" id="g-cr" min="1" max="100"></div>
+              <div class="field"><label>Default Sales Target</label><input type="number" id="g-dst" min="0"></div>
+            </div>
+            <button type="button" class="btn primary js-savegen" style="margin-top:14px">Save General Settings</button>
+          </div>
+        </section>
+
+        <!-- sources -->
+        <section class="card hidden" id="p-sources">
+          <div class="card-head"><h2>Lead Sources</h2></div>
+          <div class="card-body"><div id="l-sources"></div></div>
+        </section>
+
+        <!-- statuses -->
+        <section class="card hidden" id="p-statuses">
+          <div class="card-head"><h2>Lead Statuses</h2><span class="k-sec">shown as badges</span></div>
+          <div class="card-body"><div id="l-statuses"></div></div>
+        </section>
+
+        <!-- stages -->
+        <section class="card hidden" id="p-stages">
+          <div class="card-head"><h2>Pipeline Stages</h2><span class="k-sec">order = Kanban columns</span></div>
+          <div class="card-body"><div id="l-stages"></div></div>
+        </section>
+
+        <!-- priorities -->
+        <section class="card hidden" id="p-priorities">
+          <div class="card-head"><h2>Priorities</h2></div>
+          <div class="card-body"><div id="l-priorities"></div></div>
+        </section>
+
+        <!-- activity types -->
+        <section class="card hidden" id="p-acttypes">
+          <div class="card-head"><h2>Activity Types</h2></div>
+          <div class="card-body"><div id="l-acttypes"></div></div>
+        </section>
+
+        <!-- vehicles -->
+        <section class="card hidden" id="p-vehicles">
+          <div class="card-head"><h2>Vehicle Models</h2><span class="k-sec">dropdown options</span></div>
+          <div class="card-body"><div id="l-vehicles"></div></div>
+        </section>
+
+        <!-- variants -->
+        <section class="card hidden" id="p-variants">
+          <div class="card-head"><h2>Vehicle Variants</h2></div>
+          <div class="card-body"><div id="l-variants"></div></div>
+        </section>
+
+        <!-- colors -->
+        <section class="card hidden" id="p-colors">
+          <div class="card-head"><h2>Vehicle Colors</h2></div>
+          <div class="card-body"><div id="l-colors"></div></div>
+        </section>
+
+        <!-- holidays -->
+        <section class="card hidden" id="p-holidays">
+          <div class="card-head"><h2>Holidays</h2><span class="k-sec">used for working-day math</span></div>
+          <div class="card-body">
+            <div id="l-holidays"></div>
+            <div class="add-row">
+              <input type="text" id="h-name" placeholder="Holiday name (e.g. Christmas Day)" aria-label="Holiday name">
+              <input type="date" id="h-date" aria-label="Holiday date">
+              <button type="button" class="btn primary js-addhol">Add</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- data -->
+        <section class="card hidden" id="p-data">
+          <div class="card-head"><h2>Backup & Data</h2></div>
+          <div class="card-body">
+            <div class="data-note">
+              All CRM data is stored in this browser's <strong>IndexedDB</strong> and is not shared between devices, browsers or users.
+              Use <strong>Export Backup</strong> to keep a JSON copy, and <strong>Import Backup</strong> to restore it on another device.
+            </div>
+            <div class="backup-box">
+              <strong>Full backup (JSON)</strong>
+              <p>Includes all leads, activities, targets, holidays, settings and more — every byte needed to restore this CRM.</p>
+              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <button type="button" class="btn primary js-expbackup">Export Backup</button>
+                <label class="btn" for="imp-file" style="cursor:pointer">Import Backup…</label>
+                <input type="file" id="imp-file" accept=".json,application/json" class="hidden">
+              </div>
+            </div>
+            <div style="margin-top:18px;border-top:1px solid var(--line-2);padding-top:14px">
+              <h4 style="margin-bottom:6px">Demo & reset</h4>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                <button type="button" class="btn ghost js-loaddemo">Load Sample Data</button>
+                <button type="button" class="btn danger js-cleardata">Clear ALL Data</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- about -->
+        <section class="card hidden" id="p-about">
+          <div class="card-head"><h2>About</h2></div>
+          <div class="card-body">
+            <p style="margin-bottom:10px"><strong>Toyota CRM — Silang, Cavite</strong></p>
+            <p class="muted small" style="margin-bottom:14px">
+              Frontend-only dealership CRM. HTML + CSS + JavaScript + IndexedDB. No server, no database, no internet required.
+              Data lives in this browser. A future cloud backend can replace the storage layer without rewriting the UI.
+            </p>
+            <div class="set-item"><span class="txt"><strong>Storage technology</strong><small>IndexedDB (data) · localStorage (UI preferences only)</small></span></div>
+            <div class="set-item"><span class="txt"><strong>Offline support</strong><small>Works offline via service worker; data stays on this device</small></span></div>
+            <div class="set-item"><span class="txt"><strong>Security note</strong><small>This app has no passwords or API keys. Data access is only as private as the device you use.</small></span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/leadview.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+/* ============================================================
+   Toyota CRM — responsive.css
+   ============================================================ */
+@media (max-width: 1100px) {
+  .lead-search-row { grid-template-columns: 70px 1.4fr 1fr auto auto; }
+}
+
+@media (max-width: 1024px) {
+  body.has-sidebar { padding-left: 0; }
+  .sidebar {
+    transform: translateX(-100%); width: var(--sidebar-w);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.side-open { transform: translateX(0); }
+  .sidebar.collapsed { width: var(--sidebar-w); }
+  .sidebar.collapsed .brand-text, .sidebar.collapsed .nav-label, .sidebar.collapsed .storage-note span { display: inline; }
+  .sidebar.collapsed .nav-item, .sidebar.collapsed .storage-note, .sidebar.collapsed .brand { justify-content: flex-start; padding-left: 12px; padding-right: 12px; }
+  .js-menu { display: inline-flex; }
+}
+
+@media (max-width: 768px) {
+  .content { padding: 14px 12px 70px; }
+  .topbar { padding: 0 10px; gap: 6px; }
+  .page-title { font-size: 14px; }
+  .month-select .js-mtoday { display: none; }
+  .month-label { min-width: 84px; font-size: 12px; }
+  .add-lead span { font-size: 12px; padding: 0 2px; }
+  .kpis { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+
+  table.data { min-width: 0; }
+  .table-wrap.on-mobile-cards { border: none; background: none; box-shadow: none; overflow: visible; }
+  .table-wrap.on-mobile-cards table.data thead { display: none; }
+  .table-wrap.on-mobile-cards table.data tbody tr {
+    display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); margin-bottom: 10px; padding: 10px 12px;
+  }
+  .table-wrap.on-mobile-cards table.data tbody td {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    border: none; padding: 5px 0; font-size: 13px;
+  }
+  .table-wrap.on-mobile-cards table.data tbody td::before {
+    content: attr(data-label); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--muted); font-weight: 650; flex: none;
+  }
+
+  .lead-card-list { display: flex; }
+  .lead-card-list ~ .table-wrap { display: none; }
+  .lead-card-list.hidden-when-table ~ .table-wrap { display: none; }
+  .dash-row-2 { grid-template-columns: 1fr; }
+  .modal { max-height: 94vh; }
+  .modal-overlay { padding: 1vh 8px 10px; align-items: flex-start; }
+  .form-grid { grid-template-columns: 1fr; }
+  .toolbar .btn span { font-size: 12px; }
+  .hide-mobile { display: none !important; }
+}
+
+@media (min-width: 769px) {
+  .lead-card-list { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); gap: 9px; }
+  .kpi .k-value { font-size: 20px; }
+  .topbar .js-theme { display: none; }
+  .ll-actions .btn span { display: none; }
+  .search-results .lead-search-row { grid-template-columns: 140px 1fr auto; }
+  .lead-search-row .lead-search-id { grid-column: 1 / -1; }
+  .calendar { }
+}

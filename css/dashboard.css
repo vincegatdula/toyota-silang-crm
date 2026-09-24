@@ -1,0 +1,55 @@
+/* ============================================================
+   Toyota CRM — dashboard.css
+   ============================================================ */
+.dash-grid { display: grid; gap: 16px; }
+
+.dash-row-3 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
+.dash-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.metric-line { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--line-2); font-size: 13px; }
+.metric-line:last-child { border-bottom: none; }
+.metric-line .ml-label { color: var(--ink-2); }
+.metric-line .ml-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.metric-line .ml-val.pos { color: #22c55e; }
+.metric-line .ml-val.neg { color: var(--status-hot); }
+
+.ach-row { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
+.ach-row .progress { flex: 1; height: 10px; }
+.ach-big { font-size: 26px; font-weight: 750; letter-spacing: -.02em; }
+
+.month-note { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+
+.upcoming-list { display: flex; flex-direction: column; }
+.up-item {
+  display: flex; align-items: center; gap: 11px; padding: 9px 4px;
+  border-bottom: 1px solid var(--line-2); color: var(--ink); min-width: 0;
+}
+.up-item:last-child { border-bottom: none; }
+.up-item:hover { background: var(--surface-2); border-radius: var(--radius-s); }
+.up-date { flex: none; width: 42px; text-align: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; line-height: 1.1; }
+.up-date b { display: block; font-size: 15px; padding: 4px 2px 2px; }
+.up-date span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--surface-2); padding: 2px; }
+.up-item.overdue .up-date { border-color: var(--status-hot); color: var(--status-hot); }
+.up-meta { flex: 1; min-width: 0; }
+.up-title { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.dash-tabs { display: flex; gap: 6px; margin: 14px 0 4px; flex-wrap: wrap; }
+.dash-tabs .chip { font-size: 12px; }
+
+.panel-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.panel-title .k-sec { font-size: 10.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+
+.dash-banner-msg { font-size: 12.5px; margin-top: 6px; }
+
+.widget-sales { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+
+.chart-mini { display: flex; align-items: flex-end; gap: 5px; height: 90px; margin-top: 14px; }
+.chart-mini .bar { flex: 1; background: rgba(235,10,30,.75); border-radius: 4px 4px 0 0; min-height: 3px; position: relative; }
+.chart-mini .bar.empty { background: var(--line); }
+.chart-mini .bar:hover { background: var(--red); }
+.chart-mini .xlabels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9.5px; color: var(--muted); }
+
+@media (max-width: 1000px) {
+  .dash-row-2, .dash-row-3 { grid-template-columns: 1fr; }
+}

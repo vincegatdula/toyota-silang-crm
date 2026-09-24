@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Pipeline Kanban — Toyota CRM Silang Cavite">
+  <meta name="theme-color" content="#eb0a1e">
+  <title>Kanban · Toyota CRM</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/kanban.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="kanban">
+  <main class="content">
+    <div class="page-head">
+      <div>
+        <h2>Pipeline Kanban</h2>
+        <div class="sub">Drag cards between columns to change the pipeline stage — the stage dropdown on each card always stays in sync. <strong>Leads are the source of truth.</strong></div>
+      </div>
+      <div class="kanban-tools">
+        <select id="kb-assign" aria-label="Filter by salesperson">
+          <option value="">All assigned to</option>
+        </select>
+        <select id="kb-veh" aria-label="Filter by vehicle">
+          <option value="">All vehicles</option>
+        </select>
+        <button type="button" class="btn ghost js-refresh" id="kb-refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div class="kanban-legend">
+      <span><span class="pri pri-Hot"></span> Hot</span>
+      <span><span class="pri pri-Warm"></span> Warm</span>
+      <span><span class="pri pri-Cold"></span> Cold</span>
+      <span>Drag card to a column → sets pipeline stage</span>
+    </div>
+
+    <div class="kanban-wrap" id="kanban"></div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/leadview.js"></script>
+  <script src="js/kanban.js"></script>
+</body>
+</html>

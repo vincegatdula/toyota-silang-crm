@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Archived leads — Toyota CRM Silang Cavite">
+  <meta name="theme-color" content="#eb0a1e">
+  <title>Archived Leads · Toyota CRM</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/leads.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="archived">
+  <main class="content">
+    <div class="page-head">
+      <div>
+        <h2>Archived Leads</h2>
+        <div class="sub" id="arch-count">Archived leads are excluded from active views but keep all their information.</div>
+      </div>
+      <button type="button" class="btn ghost js-export">Export CSV</button>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-ic"></span>
+        <input type="search" id="arch-search" placeholder="Search archived leads…" aria-label="Search archived leads">
+      </div>
+      <select id="f-arch-stage" aria-label="Filter by stage"><option value="">All stages</option></select>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>ID</th><th>Customer</th><th>Vehicle</th><th>Stage</th><th>Status</th>
+            <th>Archived Date</th><th>Archived Reason / Notes</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="arch-tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty hidden" id="arch-empty">No archived leads.</div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/leadview.js"></script>
+  <script src="js/archived.js"></script>
+</body>
+</html>

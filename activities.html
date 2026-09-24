@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Activities & follow-ups — Toyota CRM Silang Cavite">
+  <meta name="theme-color" content="#eb0a1e">
+  <title>Activities · Toyota CRM</title>
+  <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/leads.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body data-page="activities">
+  <main class="content">
+    <div class="page-head">
+      <div>
+        <h2>Activities</h2>
+        <div class="sub" id="act-count"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="btn ghost js-export">Export CSV</button>
+        <button type="button" class="btn primary js-add">+ New Activity</button>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <span class="search-ic"></span>
+        <input type="search" id="act-search" placeholder="Search lead, type, notes…" aria-label="Search activities">
+      </div>
+      <select id="f-type" aria-label="Filter by activity type"><option value="">All types</option></select>
+      <select id="f-state" aria-label="Filter by completion"><option value="">All states</option><option>Pending</option><option>Completed</option></select>
+    </div>
+    <div class="chip-row" id="act-chips" style="margin-bottom:12px"></div>
+
+    <div id="act-list" class="lead-card-list"></div>
+    <div class="table-wrap" id="act-table-wrap">
+      <table class="data" id="act-table">
+        <thead>
+          <tr>
+            <th></th><th>ID</th><th>Lead</th><th>Type</th><th>Activity Date</th><th>Due</th><th>Status</th><th>Next Follow-up</th><th>Notes</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="act-tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty hidden" id="act-empty">No activities match your filters.</div>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/leadview.js"></script>
+  <script src="js/activities.js"></script>
+</body>
+</html>
