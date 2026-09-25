@@ -62,6 +62,7 @@
         cfg.activityTypes.map(t => '<option' + (act && act.type === t ? ' selected' : '') + '>' + U.esc(t) + '</option>').join('') +
         '</select></div>' +
         '<div class="field"><label>Activity Date</label><input type="date" name="activityDate" value="' + U.esc((act && act.activityDate) || U.todayISO()) + '"></div>' +
+        '<div class="field"><label>Time</label><input type="time" name="time" value="' + U.esc((act && act.time) || '') + '"></div>' +
         '<div class="field"><label>Due Date</label><input type="date" name="dueDate" value="' + U.esc((act && act.dueDate) || U.todayISO()) + '"></div>' +
         '<div class="field" style="grid-column:1/-1"><label>Notes</label><textarea name="notes" rows="2" placeholder="What was done / to do…">' + U.esc((act && act.notes) || '') + '</textarea></div>' +
         '<div class="field"><label>Outcome</label><input type="text" name="outcome" value="' + U.esc((act && act.outcome) || '') + '"></div>' +
@@ -122,6 +123,17 @@
     });
   }
 
+  function splitName(full) {
+    if (!full) return { f: '', m: '', l: '', s: '' };
+    const parts = String(full).trim().split(/\s+/);
+    const suffixes = /\b(jr\.?|sr\.?|i{1,3}v?\.?|ii+\.?)\b/i;
+    const s = parts.some(p => suffixes.test(p)) ? parts.pop() : '';
+    const f = parts.shift() || '';
+    const l = parts.pop() || '';
+    const m = parts.join(' ');
+    return { f, m, l, s };
+  }
+
   function collect(form) {
     const out = {};
     const names = {};
@@ -175,6 +187,9 @@
     const d = (k) => (lead ? (lead[k] === undefined || lead[k] === null ? '' : lead[k]) : '');
     const fin = (k) => (lead ? (lead[k] === undefined || lead[k] === null ? '' : lead[k]) : '');
     const radioStr = (v) => String(v === true ? 'yes' : v === false ? 'no' : v || 'no');
+    const spParts = splitName(sp.name);
+    const hasSpouseData = sp && Object.keys(sp).some(k => !U.empty(sp[k]));
+    const spouseOn = d('hasSpouse') || hasSpouseData;
 
     let html =
       H({ t: 'Basic & Contact', ic: 'user', f: () =>
@@ -201,22 +216,27 @@
         tx('birthdate', 'Birthdate (birthday alerts)', d('birthdate'), 'date') +
         sel('buyerType', 'Buyer Type', ['First Time Buyer', 'Additional Purchase', 'Replacement'], d('buyerType')) +
         sel('purpose', 'Purpose', ['Business / Work', 'Personal / Family'], d('purpose')) +
-        radio('hasSpouse', 'Spouse / Co-borrower', [{ v: 'yes', l: 'Yes' }, { v: 'no', l: 'No' }], radioStr(d('hasSpouse')), true) +
-        '<div id="spouse-box"' + (d('hasSpouse') ? '' : ' class="hidden"') + ' style="grid-column:1/-1">' +
+        radio('hasSpouse', 'Spouse / Co-borrower', [{ v: 'yes', l: 'Yes' }, { v: 'no', l: 'No' }], radioStr(spouseOn), true) +
+        '<div id="spouse-box"' + (spouseOn ? '' : ' class="hidden"') + ' style="grid-column:1/-1">' +
         '<div class="form-section" style="margin-bottom:0"><h4 style="border:none;margin-bottom:6px;font-size:10.5px">Spouse / Co-borrower information</h4><div class="form-grid">' +
-        tx('spouse.name', 'Name', sp.name) +
-        tx('spouse.tin', 'TIN', sp.tin) +
+        tx('spouse.firstName', 'First Name', spParts.f) +
+        tx('spouse.middleName', 'Middle Name', spParts.m) +
+        tx('spouse.lastName', 'Last Name', spParts.l) +
+        tx('spouse.suffix', 'Suffix', spParts.s) +
+        tx('spouse.relationship', 'Relationship to Borrower', sp.relationship) +
+        tx('spouse.mobile', 'Mobile', sp.mobile, 'tel') +
+        tx('spouse.email', 'Email', sp.email, 'email') +
         tx('spouse.address', 'Address', sp.address, 'text', false, '', true) +
+        tx('spouse.occupation', 'Occupation', sp.occupation) +
+        tx('spouse.employer', 'Employer', sp.employer) +
+        tx('spouse.monthlySalary', 'Monthly Income (PHP)', sp.monthlySalary, 'number') +
+        tx('spouse.tin', 'TIN', sp.tin) +
+        tx('spouse.telephone', 'Telephone', sp.telephone, 'tel') +
         sel('spouse.ownership', 'Ownership', ['Owned', 'Leased', 'Rented', 'Other'], sp.ownership) +
-        tx('spouse.telephone', 'Telephone', sp.telephone) +
-        tx('spouse.mobile', 'Mobile', sp.mobile) +
-        tx('spouse.email', 'Email', sp.email) +
         tx('spouse.dependents', 'Dependents', sp.dependents, 'number') +
         tx('spouse.yearsAtAddress', 'Years at Address', sp.yearsAtAddress, 'number') +
-        tx('spouse.employer', 'Employer', sp.employer) +
-        tx('spouse.position', 'Position', sp.position) +
-        tx('spouse.monthlySalary', 'Monthly Salary', sp.monthlySalary, 'number') +
-        tx('spouse.otherIncome', 'Other Income', sp.otherIncome, 'number') +
+        tx('spouse.otherIncome', 'Other Income (PHP)', sp.otherIncome, 'number') +
+        '<input type="hidden" name="spouse.position" value="' + U.esc(sp.position === undefined || sp.position === null ? '' : sp.position) + '">' +
         '</div></div></div>'
       });
 
@@ -288,23 +308,37 @@
   }
 
   /* =========================================================
-     QUICK ADD FORM
+     QUICK ADD FORM (full lead form — spouse/co-borrower included)
      ========================================================= */
-  function buildQuickAdd() {
-    const cfg = db.getConfig();
-    return '<form id="quickadd-form" class="form-grid">' +
-      sel('leadType', 'Customer Type', [{ v: 'individual', l: 'Individual' }, { v: 'corporate', l: 'Corporate' }], 'individual') +
-      tx('name', 'Customer Name', '', 'text', true, '', true) +
-      tx('mobile', 'Mobile Number', '', 'tel', true) +
-      sel('source', 'Lead Source', cfg.leadSources, cfg.leadSources[0]) +
-      sel('vehicleInterest', 'Vehicle', cfg.vehicleModels, '') +
-      sel('priority', 'Priority', cfg.priorities, cfg.priorities[0]) +
-      sel('stage', 'Pipeline Stage', cfg.stages, cfg.stages[0]) +
-      sel('status', 'Lead Status', cfg.statuses, cfg.statuses[0]) +
-      tx('nextFollowupDate', 'Follow-up Date', '', 'date') +
-      tx('nextStep', 'Next Step', '') +
-      txarea('notes', 'Notes', '', 2) +
-      '</form>';
+  /* Shared wiring for the lead-type toggle used by both Add and Edit:
+     sections order is 0) basic, 1) customer-individual, 2) employment/corporate.
+     The customer-individual section is only relevant for individuals; the
+     employment/corporate section always shows (Employment for individuals,
+     Corporate for companies). */
+  function wireTypeToggle(form) {
+    const lt = form.querySelector('[name="leadType"]');
+    if (!lt) return;
+    const updateType = () => {
+      const corp = lt.value === 'corporate';
+      const sections = form.querySelectorAll('.form-section');
+      sections.forEach((s, i) => {
+        if (i === 1) s.style.display = corp ? 'none' : '';
+        else s.style.display = '';
+      });
+      const spBox = form.querySelector('#spouse-box');
+      if (corp && spBox) spBox.classList.add('hidden');
+    };
+    lt.addEventListener('change', updateType);
+    updateType();
+  }
+
+  function wireSpouseToggle(form) {
+    const spRadios = form.querySelectorAll('[name="hasSpouse"]');
+    spRadios.forEach(r => r.addEventListener('change', () => {
+      const v = form.querySelector('[name="hasSpouse"]:checked');
+      const box = form.querySelector('#spouse-box');
+      if (box) box.classList.toggle('hidden', !(v && v.value === 'yes'));
+    }));
   }
 
   /* =========================================================
@@ -330,21 +364,23 @@
 
   function openAdd() {
     const cfg = db.getConfig();
-    const body =
-      '<div class="demo-hint small muted" style="margin-bottom:12px">Creates a new lead. ID and Date Created are generated automatically.</div>' +
-      buildQuickAdd();
+    const html = buildLeadForm({ leadType: 'individual' });
     App.modal({
-      title: '+ Add Lead', size: 'md',
-      content: body,
+      title: '+ Add Lead', size: 'lg',
+      content: '<form id="quickadd-form" class="form-grid">' +
+        '<div class="demo-hint small muted" style="grid-column:1/-1;margin-bottom:2px">Creates a new lead. ID and Date Created are generated automatically.</div>' +
+        html + '</form>',
       footer: '<span class="spacer"></span><button type="button" class="btn ghost js-cancel">Cancel</button><button type="submit" form="quickadd-form" class="btn primary">Save Lead</button>'
     });
     const form = document.getElementById('quickadd-form');
+    wireTypeToggle(form);
+    wireSpouseToggle(form);
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!form.reportValidity()) return;
       const raw = collect(form);
       try {
-        const lead = await db.leads.create(raw);
+        const lead = await db.leads.create(buildLeadPayload(raw, null));
         App.closeModal();
         App.toast('Lead ' + lead.id + ' saved successfully.', 'success');
         setTimeout(() => global.LeadView.open(lead.id), 200);
@@ -375,7 +411,7 @@
         e.preventDefault();
         if (!form.reportValidity()) return;
         const raw = collect(form);
-        const payload = buildLeadPayload(raw);
+        const payload = buildLeadPayload(raw, lead);
         try {
           await db.leads.update(id, payload);
           App.closeModal();
@@ -386,45 +422,28 @@
           console.error(err);
         }
       });
-      const lt = form.querySelector('[name="leadType"]');
-      const updateType = () => {
-        const corp = lt.value === 'corporate';
-        const sections = form.querySelectorAll('.form-section');
-        // sections order: 0 basic,1 customer,2 emp/corp,...
-        sections.forEach((s, i) => {
-          if (i === 1) s.style.display = 'none'; // customer-individual section hidden entirely, shown if !corp
-          if (i === 2) s.style.display = corp ? '' : 'none';
-          if (i > 2) s.style.display = '';
-        });
-        if (!corp) sections[1].style.display = '';
-        const spBox = form.querySelector('#spouse-box');
-        if (corp && spBox) spBox.classList.add('hidden');
-      };
-      lt.addEventListener('change', updateType);
-      const spRadios = form.querySelectorAll('[name="hasSpouse"]');
-      spRadios.forEach(r => r.addEventListener('change', () => {
-        const v = form.querySelector('[name="hasSpouse"]:checked');
-        const box = form.querySelector('#spouse-box');
-        if (box) box.classList.toggle('hidden', !(v && v.value === 'yes'));
-      }));
-      updateType();
+      wireTypeToggle(form);
+      wireSpouseToggle(form);
       setTimeout(() => form.querySelector('[name="name"]').focus(), 60);
     });
   }
 
-  function buildLeadPayload(raw) {
+  function buildLeadPayload(raw, prior) {
     const hasSpouse = raw.hasSpouse === 'yes';
     const spouse = {};
-    ['name', 'tin', 'address', 'ownership', 'telephone', 'mobile', 'email', 'dependents', 'yearsAtAddress', 'employer', 'position', 'monthlySalary', 'otherIncome'].forEach(k => {
+    ['tin', 'address', 'ownership', 'telephone', 'mobile', 'email', 'dependents', 'yearsAtAddress', 'employer', 'position', 'monthlySalary', 'otherIncome', 'relationship', 'occupation'].forEach(k => {
       const v = raw['spouse.' + k];
       if (v !== undefined && v !== '') spouse[k] = v;
       delete raw['spouse.' + k];
     });
+    const parts = ['spouse.firstName', 'spouse.middleName', 'spouse.lastName', 'spouse.suffix']
+      .map(k => raw[k]).filter(v => v !== undefined && String(v).trim() !== '').map(v => String(v).trim());
+    ['spouse.firstName', 'spouse.middleName', 'spouse.lastName', 'spouse.suffix'].forEach(k => delete raw[k]);
+    if (parts.length) spouse.name = parts.join(' ');
+    else if (prior && prior.spouse && prior.spouse.name) spouse.name = prior.spouse.name;
     delete raw.hasSpouse;
     raw.hasSpouse = hasSpouse;
     raw.spouse = spouse;
-    // auto status: set Released/After-Sales stage when release date present
-    if (raw.releaseDate && raw.stage !== 'After-Sales' && raw.status !== 'Released') { }
     return raw;
   }
 
@@ -505,11 +524,17 @@
         :
         field('TIN', f('tin'), true) + field('Address', f('address')) + field('Ownership', f('ownershipStatus')) + field('Telephone', f('telephone')) +
         field('Dependents', f('dependents')) + field('Years at Address', f('yearsAtAddress')) + field('Birthdate', lead.birthdate ? U.fmtDate(lead.birthdate) : '') +
-        field('Buyer Type', f('buyerType')) + field('Purpose', f('purpose')) + field('Has Spouse', lead.hasSpouse ? 'Yes' : 'No') +
-        (lead.hasSpouse ?
-          field('Spouse', sp.name) + field('Spouse TIN', sp.tin) + field('Spouse Employer', sp.employer) + field('Spouse Position', sp.position) +
-          field('Spouse Salary', U.fmtMoney(sp.monthlySalary)) + field('Spouse Mobile', sp.mobile)
-          : '')
+        field('Buyer Type', f('buyerType')) + field('Purpose', f('purpose')) +
+        (() => {
+          const hasSpData = lead.hasSpouse || Object.keys(sp).some(k => !U.empty(sp[k]));
+          return field('Has Spouse', hasSpData ? 'Yes' : 'No') +
+            (hasSpData ?
+              field('Spouse', sp.name || (sp.firstName + ' ' + sp.lastName).trim() || '—') + field('Relationship', sp.relationship) +
+              field('Spouse Mobile', sp.mobile) + field('Spouse Email', sp.email) + field('Spouse Address', sp.address) +
+              field('Spouse Occupation', sp.occupation) + field('Spouse Employer', sp.employer) + field('Spouse Position', sp.position) +
+              field('Spouse Income', U.fmtMoney(sp.monthlySalary)) + field('Spouse TIN', sp.tin)
+              : '');
+        })()
       ) +
       '</div>' +
       (!isCorp ?

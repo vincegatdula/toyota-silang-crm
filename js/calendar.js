@@ -21,9 +21,12 @@
   function buildEvents(leads, acts, holidays, mk) {
     const events = [];
     const year = parseInt(mk.slice(0, 4), 10);
-    const add = (date, type, title, leadId, meta) => { if (date) events.push({ date, type, cls: TYPE_CLS[type], t: type, title, leadId, meta: meta || '' }); };
+    const add = (date, type, title, leadId, meta) => {
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(String(date))) return;
+      events.push({ date, type, cls: TYPE_CLS[type], t: type, title, leadId, meta: meta || '' });
+    };
 
-    holidays.forEach(h => add(h.date, 'holiday', h.name || 'Holiday', null, h.date));
+    (holidays || []).forEach(h => { if (h && h.date) add(h.date, 'holiday', h.name || 'Holiday', null, h.date); });
 
     leads.forEach(l => {
       if (l.archived) return;
@@ -51,14 +54,15 @@
       }
     });
 
-    acts.forEach(a => {
+    (acts || []).forEach(a => {
+      if (!a || typeof a !== 'object') return;
       const map = {
         'Test Drive': 'testdrive', 'Meeting': 'meeting', 'Financing Application': 'financing', 'Bank Coordination': 'financing',
         'Reservation': 'reservation', 'Payment': 'payment', 'Release': 'release', 'OR/CR': 'release', 'Plate': 'release'
       };
       const type = map[a.type] || 'activity';
-      const iso = a.dueDate || a.activityDate;
-      add(iso, type, a.type + ': ' + (a.leadName || '—') + (a.completed ? ' ✓' : ''), a.leadId, a.notes || a.nextStep);
+      const iso = a.dueDate || a.activityDate || '';
+      add(iso, type, a.type + ': ' + (a.leadName || '—') + (a.completed ? ' ✓' : ''), a.leadId || '', a.notes || a.nextStep);
     });
 
     return events;
@@ -119,8 +123,8 @@
       size: 'md',
       content: '<div class="ev-list">' + evs.map(e => {
         const label = TYPE[e.t];
-        return '<button type="button" class="ev-row js-evr" style="border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px" data-id="' + U.esc(e.leadId || '') + '">' +
-          '<span class="ev-dot" style="background:' + 'var(--ev-color)' + '"></span>' +
+        return '<button type="button" class="ev-row js-evr" data-id="' + U.esc(e.leadId || '') + '">' +
+          '<span class="ev-dot ev-' + U.esc(e.cls) + '"></span>' +
           '<span class="ev-txt"><b>' + U.esc(label + ': ' + e.title) + '</b><span>' + U.esc(e.meta || '—') + '</span></span>' +
           '</button>';
       }).join('') + '</div>',
@@ -167,15 +171,23 @@
   }
 
   async function refresh() {
-    const mk = App.month;
-    document.getElementById('cal-title').textContent = U.monthLabel(mk);
-    const [leads, acts] = await Promise.all([App.data('leads'), App.data('activities')]);
-    const holidays = await App.data('holidays');
-    App._cache.holsCache = holidays;
-    const events = buildEvents(leads, acts, holidays, mk);
-    renderGrid(events, mk);
-    renderSide(events);
-    renderHolidays(mk);
+    try {
+      const mk = App.month;
+      document.getElementById('cal-title').textContent = U.monthLabel(mk);
+      const leads = await App.load('leads');
+      let acts = [];
+      try { acts = await ActivityService.getAll(); }
+      catch (e) { console.error('Failed to load activities', e); App.onError('Could not load activities.'); }
+      const holidays = await App.load('holidays');
+      App._cache.holsCache = holidays;
+      const events = buildEvents(leads, acts, holidays, mk);
+      renderGrid(events, mk);
+      renderSide(events);
+      renderHolidays(mk);
+    } catch (e) {
+      console.error('Calendar refresh failed', e);
+      App.onError('Calendar could not load. Some data may be unavailable.');
+    }
   }
 
   function boot() {

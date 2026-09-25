@@ -56,12 +56,12 @@
       const rpd = wdl > 0 ? rem / wdl : rem;
       const pct = t > 0 ? (a / t) * 100 : 0;
       return '<tr>' +
-        '<td class="source-label">' + U.esc(src) + '</td>' +
-        '<td><input type="number" class="lg-target" data-src="' + U.esc(src) + '" min="0" value="' + t + '" aria-label="Target for ' + U.esc(src) + '"></td>' +
-        '<td>' + U.fmtNum(a) + '</td>' +
-        '<td>' + U.fmtNum(rem) + '</td>' +
-        '<td>' + (rem > 0 ? U.fmtNum(rpd, 1) : '—') + '</td>' +
-        '<td style="min-width:150px"><div class="leadgen-row"><div class="progress"><span style="width:' + Math.min(100, pct) + '%"></span></div>' + U.fmtNum(a) + '/' + U.fmtNum(t) + '</div></td>' +
+        '<td class="source-label" data-label="Source">' + U.esc(src) + '</td>' +
+        '<td data-label="Target"><input type="number" class="lg-target" data-src="' + U.esc(src) + '" min="0" value="' + t + '" aria-label="Target for ' + U.esc(src) + '"></td>' +
+        '<td data-label="Actual">' + U.fmtNum(a) + '</td>' +
+        '<td data-label="Remaining">' + U.fmtNum(rem) + '</td>' +
+        '<td data-label="Required / day">' + (rem > 0 ? U.fmtNum(rpd, 1) : '—') + '</td>' +
+        '<td style="min-width:150px" data-label="Achievement"><div class="leadgen-row"><div class="progress"><span style="width:' + Math.min(100, pct) + '%"></span></div>' + U.fmtNum(a) + '/' + U.fmtNum(t) + '</div></td>' +
         '</tr>';
     }).join('');
     document.getElementById('lg-tbody').innerHTML = rows;

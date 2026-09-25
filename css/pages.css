@@ -32,7 +32,7 @@
 .hbar .hb-val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 650; }
 
 .vbar { display: flex; align-items: flex-end; gap: 8px; height: 140px; }
-.vbar .vb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+.vbar .vb { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
 .vbar .vb .vb-bar { width: 100%; max-width: 42px; background: var(--red); border-radius: 4px 4px 0 0; min-height: 2px; position: relative; }
 .vbar .vb .vb-bar:hover { background: var(--red-dark); }
 .vbar .vb .vb-lbl { font-size: 9.5px; color: var(--muted); white-space: nowrap; overflow: hidden; max-width: 100%; }

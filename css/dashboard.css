@@ -3,8 +3,8 @@
    ============================================================ */
 .dash-grid { display: grid; gap: 16px; }
 
-.dash-row-3 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; }
-.dash-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.dash-row-3 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+.dash-row-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 
 .metric-line { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px dashed var(--line-2); font-size: 13px; }
 .metric-line:last-child { border-bottom: none; }
@@ -19,20 +19,35 @@
 
 .month-note { font-size: 12px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 
+/* ---------- upcoming / follow-up feed ----------
+   Rows are <button> elements; give them an explicit surface (the browser
+   default would otherwise render the UA gray button-face) plus proper
+   hover / active / focus states and full-width, left-aligned text. */
 .upcoming-list { display: flex; flex-direction: column; }
 .up-item {
-  display: flex; align-items: center; gap: 11px; padding: 9px 4px;
+  display: flex; align-items: center; gap: 11px; padding: 9px 6px;
   border-bottom: 1px solid var(--line-2); color: var(--ink); min-width: 0;
+  background: transparent; width: 100%; text-align: left; border-radius: var(--radius-s);
+  transition: background .12s, transform .06s;
 }
 .up-item:last-child { border-bottom: none; }
-.up-item:hover { background: var(--surface-2); border-radius: var(--radius-s); }
-.up-date { flex: none; width: 42px; text-align: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; line-height: 1.1; }
-.up-date b { display: block; font-size: 15px; padding: 4px 2px 2px; }
-.up-date span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--surface-2); padding: 2px; }
-.up-item.overdue .up-date { border-color: var(--status-hot); color: var(--status-hot); }
+.up-item:hover { background: var(--surface-2); }
+.up-item:active { transform: translateY(.5px); }
+.up-item:focus-visible { outline-offset: -2px; }
+
+/* Date tile — crisp white card with a red month strip (calendar-like). */
+.up-date {
+  flex: none; width: 42px; text-align: center; border: 1px solid var(--line);
+  border-radius: 8px; overflow: hidden; line-height: 1.1; background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 20, 30, .04);
+}
+.up-date b { display: block; font-size: 15px; padding: 4px 2px 3px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.up-date span { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: #fff; background: var(--red); padding: 2.5px 2px; font-weight: 700; }
+.up-item.overdue .up-date { border-color: var(--status-hot); }
+.up-item.overdue .up-date b { color: var(--status-hot); }
 .up-meta { flex: 1; min-width: 0; }
-.up-title { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.up-sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-title { display: block; font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-sub { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .dash-tabs { display: flex; gap: 6px; margin: 14px 0 4px; flex-wrap: wrap; }
 .dash-tabs .chip { font-size: 12px; }
@@ -40,16 +55,54 @@
 .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .panel-title .k-sec { font-size: 10.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
 
-.dash-banner-msg { font-size: 12.5px; margin-top: 6px; }
-
 .widget-sales { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 
-.chart-mini { display: flex; align-items: flex-end; gap: 5px; height: 90px; margin-top: 14px; }
-.chart-mini .bar { flex: 1; background: rgba(235,10,30,.75); border-radius: 4px 4px 0 0; min-height: 3px; position: relative; }
-.chart-mini .bar.empty { background: var(--line); }
-.chart-mini .bar:hover { background: var(--red); }
-.chart-mini .xlabels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9.5px; color: var(--muted); }
+/* Activities & Test Drive panel */
+.up-empty { padding: 24px 16px; min-height: 0; }
+.up-empty svg { color: var(--red); opacity: .35; }
+.up-more { margin-top: 10px; border-top: 1px dashed var(--line-2); padding-top: 10px; }
+.up-more a { display: inline-flex; align-items: center; gap: 4px; color: var(--red); font-weight: 600; font-size: 12.5px; }
+.up-more a svg { transition: transform .12s; }
+.up-more a:hover svg { transform: translateX(2px); }
+
+/* ---------- monthly trend chart ----------
+   Pure-CSS grouped bar chart: 4 gridlines, Y-axis labels, red + neutral
+   bars with per-bar value labels, month labels and a legend. */
+.mt-wrap { display: flex; flex-direction: column; }
+.mt-plot { position: relative; height: 168px; margin: 0 4px 0 26px; }
+.mt-lines { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: space-between; pointer-events: none; }
+.mt-lines i { border-top: 1px solid var(--line); }
+.mt-y {
+  position: absolute; top: 0; bottom: 0; left: 0; transform: translateX(-100%);
+  display: flex; flex-direction: column; justify-content: space-between;
+  text-align: right; padding-right: 7px; font-size: 10px; color: var(--muted);
+  font-variant-numeric: tabular-nums; min-width: 26px;
+}
+.mt-columns { position: absolute; inset: 0; display: flex; align-items: flex-end; }
+.mt-col { flex: 1; display: flex; align-items: flex-end; justify-content: center; min-width: 0; }
+.mt-g { position: relative; display: flex; align-items: flex-end; gap: 3px; height: 100%; }
+.mt-bar {
+  width: clamp(10px, 46%, 22px); border-radius: 5px 5px 0 0; position: relative;
+  background: var(--line); transition: opacity .12s;
+}
+.mt-bar span {
+  position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+  font-size: 9.5px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-2);
+  white-space: nowrap;
+}
+.mt-new { background: var(--red); }
+.mt-rel { background: #94a3b8; }
+[data-theme="dark"] .mt-rel { background: #4b5563; }
+.mt-col:hover .mt-bar { opacity: .85; }
+.mt-x { display: flex; margin: 2px 4px 0 26px; }
+.mt-x span { flex: 1; text-align: center; font-size: 10.5px; color: var(--muted); overflow: hidden; white-space: nowrap; }
+.mt-legend { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+.mt-legend .lg { display: inline-flex; align-items: center; gap: 6px; }
+.mt-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.mt-legend .lg-red { background: var(--red); }
+.mt-legend .lg-slate { background: #94a3b8; }
+[data-theme="dark"] .mt-legend .lg-slate { background: #4b5563; }
 
 @media (max-width: 1000px) {
-  .dash-row-2, .dash-row-3 { grid-template-columns: 1fr; }
+  .dash-row-2, .dash-row-3 { grid-template-columns: minmax(0, 1fr); }
 }

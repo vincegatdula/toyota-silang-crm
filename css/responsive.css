@@ -1,15 +1,22 @@
 /* ============================================================
    Toyota CRM — responsive.css
+   Breakpoints: 1100 (condense) · 1024 (off-canvas sidebar)
+   768 (mobile layout + bottom nav) · 480 (compact phones)
    ============================================================ */
+.mobile-nav { display: none; } /* injected by app.js — visible only on mobile */
+
+/* ---------- ≤ 1100 px: condense ---------- */
 @media (max-width: 1100px) {
   .lead-search-row { grid-template-columns: 70px 1.4fr 1fr auto auto; }
+  .dash-row-3 { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
 }
 
+/* ---------- ≤ 1024 px: off-canvas sidebar ---------- */
 @media (max-width: 1024px) {
   body.has-sidebar { padding-left: 0; }
   .sidebar {
     transform: translateX(-100%); width: var(--sidebar-w);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg); transition: transform .22s ease;
   }
   .sidebar.side-open { transform: translateX(0); }
   .sidebar.collapsed { width: var(--sidebar-w); }
@@ -18,16 +25,24 @@
   .js-menu { display: inline-flex; }
 }
 
+/* ---------- ≤ 900 px: single-column dashboards ---------- */
+@media (max-width: 900px) {
+  .dash-row-3, .dash-row-2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- ≤ 768 px: mobile layout + bottom navigation ---------- */
 @media (max-width: 768px) {
-  .content { padding: 14px 12px 70px; }
+  .content { padding: 14px 12px 86px; }
   .topbar { padding: 0 10px; gap: 6px; }
-  .page-title { font-size: 14px; }
+  .page-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .month-select .js-mtoday { display: none; }
   .month-label { min-width: 84px; font-size: 12px; }
   .add-lead span { font-size: 12px; padding: 0 2px; }
   .kpis { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 
   table.data { min-width: 0; }
+
+  /* tables → stacked cards (used by Archived, Targets lead-gen, etc.) */
   .table-wrap.on-mobile-cards { border: none; background: none; box-shadow: none; overflow: visible; }
   .table-wrap.on-mobile-cards table.data thead { display: none; }
   .table-wrap.on-mobile-cards table.data tbody tr {
@@ -42,28 +57,105 @@
     content: attr(data-label); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
     color: var(--muted); font-weight: 650; flex: none;
   }
+  .table-wrap.on-mobile-cards table.data tbody td.no-caption::before,
+  .table-wrap.on-mobile-cards table.data tbody td[data-label=""]::before { content: none; }
+  .table-wrap.on-mobile-cards table.data tbody td.no-caption { justify-content: flex-end; }
+  .table-wrap.on-mobile-cards table.data tbody td > div, .table-wrap.on-mobile-cards table.data tbody td > span { text-align: right; white-space: normal; }
 
+  /* dedicated mobile card lists (Leads, Activities) */
   .lead-card-list { display: flex; }
   .lead-card-list ~ .table-wrap { display: none; }
   .lead-card-list.hidden-when-table ~ .table-wrap { display: none; }
-  .dash-row-2 { grid-template-columns: 1fr; }
+
   .modal { max-height: 94vh; }
   .modal-overlay { padding: 1vh 8px 10px; align-items: flex-start; }
   .form-grid { grid-template-columns: 1fr; }
   .toolbar .btn span { font-size: 12px; }
+  .toolbar select { max-width: 100%; }
   .hide-mobile { display: none !important; }
+
+  /* enlarge touch targets */
+  .up-item { padding: 11px 8px; }
+  .up-date { width: 44px; }
+  .ev-row { padding: 9px 8px; }
+  .cal-day { min-height: 70px; }
+
+  /* bottom navigation */
+  .mobile-nav {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: var(--surface); border-top: 1px solid var(--line);
+    box-shadow: 0 -2px 12px rgba(15, 20, 30, .08);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mnav-item {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 8px 2px 7px; color: var(--muted); font-size: 10px; font-weight: 600;
+  }
+  .mnav-item .ic { display: block; }
+  .mnav-item:hover { color: var(--ink); }
+  .mnav-item:active { background: var(--surface-2); }
+  .mnav-item.active { color: var(--red); }
+
+  .search-results .lead-search-row { grid-template-columns: 1fr auto; }
+  .lead-search-row .lead-search-id { grid-column: 1 / -1; }
+  .lead-search-row .muted:nth-of-type(1) { display: none; }
+
+  .ll-actions { margin-left: 0; width: 100%; }
+  .ll-actions .js-act { flex: 1; }
+  .ll-grid { grid-template-columns: 1fr; }
+  .panel-title { flex-wrap: wrap; }
 }
 
 @media (min-width: 769px) {
   .lead-card-list { display: none !important; }
 }
 
+/* ---------- ≤ 480 px: compact phones ---------- */
 @media (max-width: 480px) {
   .kpis { grid-template-columns: repeat(2, 1fr); gap: 9px; }
   .kpi .k-value { font-size: 20px; }
   .topbar .js-theme { display: none; }
-  .ll-actions .btn span { display: none; }
-  .search-results .lead-search-row { grid-template-columns: 140px 1fr auto; }
-  .lead-search-row .lead-search-id { grid-column: 1 / -1; }
-  .calendar { }
+  .add-lead { padding: 7px 10px; }
+  .page-head h2 { font-size: 15.5px; }
+  .widget-sales { grid-template-columns: repeat(2, 1fr); }
+
+  /* chart: keep readable, tighten labels */
+  .mt-plot { height: 150px; margin-left: 22px; }
+  .mt-x { margin-left: 22px; }
+  .mt-bar span { font-size: 8.5px; top: -14px; }
+  .mt-legend { gap: 12px; font-size: 11px; }
+
+  .cal-day { min-height: 58px; padding: 3px 2px; }
+  .devent { width: 7px; height: 7px; }
+  .cal-title { font-size: 14px; min-width: 120px; }
+
+  .kanban-row { gap: 8px; }
+  .kanban-col { min-width: 240px; }
+  .kc-stage { letter-spacing: 0; }
+
+  .set-nav { gap: 4px; }
+  .settings-card .field { padding: 0; }
+}
+
+/* ---------- ≤ 600 px: reports bars ---------- */
+@media (max-width: 600px) {
+  .vbar { gap: 4px; }
+  .vbar .vb-lbl { display: none; } /* month stays available via .vb title tooltip */
+}
+
+/* ---------- ≤ 400 px: very narrow phones ---------- */
+@media (max-width: 400px) {
+  .topbar {
+    flex-wrap: wrap; height: auto; min-height: 58px; gap: 6px;
+    padding: 6px 10px; align-content: center;
+  }
+  .topbar-spacer { display: none; }
+  .page-title { min-width: 0; }
+  .topbar .btn.icon { padding: 6px; }
+  .month-select { min-width: 0; }
+}
+
+/* print */
+@media print {
+  .mobile-nav, .sidebar-scrim { display: none !important; }
 }

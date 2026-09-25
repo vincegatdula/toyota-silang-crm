@@ -49,25 +49,54 @@
      MINIMAL IndexedDB PROMISE WRAPPER
      ========================================================================= */
   const DB_NAME = 'toyota-crm';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
+
+  const STORE_SPECS = {
+    leads: { keyPath: 'id' },
+    activities: { keyPath: 'id', index: { name: 'leadId', fields: 'leadId', opts: { unique: false } } },
+    targets: { keyPath: 'month' },
+    settings: { keyPath: 'key' },
+    holidays: { keyPath: 'date' },
+    vehicles: { keyPath: 'id' },
+    seq: { keyPath: 'key' }
+  };
+
+  /* Create any missing object stores. This runs during every upgrade so that
+     databases created by older versions of the app are automatically repaired
+     (missing stores recreated) instead of breaking every read on that table. */
+  function ensureStores(dbx) {
+    Object.keys(STORE_SPECS).forEach(name => {
+      if (dbx.objectStoreNames.contains(name)) return;
+      const spec = STORE_SPECS[name];
+      const s = dbx.createObjectStore(name, { keyPath: spec.keyPath });
+      if (spec.index) s.createIndex(spec.index.name, spec.index.fields, spec.index.opts);
+    });
+  }
 
   function openDB() {
     return new Promise((resolve, reject) => {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = (e) => {
-        const dbx = e.target.result;
-        if (!dbx.objectStoreNames.contains('leads')) dbx.createObjectStore('leads', { keyPath: 'id' });
-        if (!dbx.objectStoreNames.contains('activities')) {
-          const s = dbx.createObjectStore('activities', { keyPath: 'id' });
-          s.createIndex('leadId', 'leadId', { unique: false });
-        }
-        if (!dbx.objectStoreNames.contains('targets')) dbx.createObjectStore('targets', { keyPath: 'month' });
-        if (!dbx.objectStoreNames.contains('settings')) dbx.createObjectStore('settings', { keyPath: 'key' });
-        if (!dbx.objectStoreNames.contains('holidays')) dbx.createObjectStore('holidays', { keyPath: 'date' });
-        if (!dbx.objectStoreNames.contains('vehicles')) dbx.createObjectStore('vehicles', { keyPath: 'id' });
-        if (!dbx.objectStoreNames.contains('seq')) dbx.createObjectStore('seq', { keyPath: 'key' });
+        ensureStores(e.target.result);
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onblocked = () => { /* another tab holds an older version; waiting */ };
+      req.onsuccess = (e) => {
+        const dbx = e.target.result;
+        /* Self-heal any stores still missing (e.g. a DB opened at the same
+           version before `ensureStores` existed). Schema migration is
+           additive — existing records are never touched. */
+        const missing = Object.keys(STORE_SPECS).filter(n => !dbx.objectStoreNames.contains(n));
+        if (missing.length) {
+          const v = dbx.version + 1;
+          dbx.close();
+          const req2 = indexedDB.open(DB_NAME, v);
+          req2.onupgradeneeded = (e2) => ensureStores(e2.target.result);
+          req2.onsuccess = () => resolve(req2.result);
+          req2.onerror = () => reject(req2.error);
+        } else {
+          resolve(dbx);
+        }
+      };
       req.onerror = () => reject(req.error);
     });
   }
@@ -345,7 +374,7 @@
       t.oncomplete = res; t.onerror = () => rej(t.error);
     });
     _settingsRecord = null;
-Object.assign(_config, DEFAULTS);
+    Object.assign(_config, DEFAULTS);
     await loadConfig();
     ['leads', 'activities', 'targets', 'holidays', 'vehicles', 'settings'].forEach(emit);
   }
@@ -409,8 +438,22 @@ Object.assign(_config, DEFAULTS);
 
     activities: {
       async getAll() {
-        const all = await getAll('activities');
-        return all.sort((a, b) => { const d = String(b.dueDate || b.date || '').localeCompare(a.dueDate || a.date || ''); return d || String(b.id).localeCompare(String(a.id)); });
+        /* Defensive read: tolerate records written by older versions of the app
+           (missing fields, malformed dates, non-object values) so one corrupt
+           record can never blank the entire Activities view. */
+        const all = (await getAll('activities'))
+          .filter(a => a && typeof a === 'object')
+          .map(a => {
+            const clean = Object.assign({}, a);
+            ['id', 'leadId', 'leadName', 'type', 'outcome', 'notes', 'nextStep'].forEach(k => {
+              if (clean[k] === undefined || clean[k] === null) clean[k] = '';
+            });
+            return clean;
+          });
+        return all.sort((a, b) => {
+          const d = String(b.dueDate || b.activityDate || '').localeCompare(a.dueDate || a.activityDate || '');
+          return d || String(b.id || '').localeCompare(String(a.id || ''));
+        });
       },
       async get(id) { return getOne('activities', id); },
       async getByLead(leadId) {

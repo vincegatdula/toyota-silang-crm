@@ -73,13 +73,37 @@
     data(table) {
       if (!this._cache[table]) {
         const map = { leads: () => db.leads.getAll(), activities: () => db.activities.getAll(), targets: () => db.targets.getAll(), holidays: () => db.holidays.getAll() };
-        this._cache[table] = map[table] ? map[table]() : Promise.resolve([]);
+        const p = map[table] ? map[table]() : Promise.resolve([]);
+        this._cache[table] = p;
+        // evict failed reads so the next attempt re-queries instead of
+        // serving a permanently-rejected promise
+        p.catch(() => { delete this._cache[table]; });
       }
       return this._cache[table];
     },
     invalidate(table) {
       if (table === 'settings') { this._cache = {}; return; }
       delete this._cache[table];
+    },
+
+    /* ---------------- resilient load + user-facing errors ---------------- */
+    async load(table) {
+      try { return await this.data(table); }
+      catch (e) {
+        console.error('Failed to load ' + table, e);
+        this.onError('Could not read ' + table + ' from local storage. If this keeps happening, make sure browser storage (IndexedDB) is enabled and not blocked.');
+        return [];
+      }
+    },
+    onError(msg) {
+      const root = document.getElementById('error-banner');
+      if (!root) return;
+      root.classList.remove('hidden');
+      root.innerHTML =
+        icon('alert', 'ic', 15) +
+        '<span class="err-msg">' + U.esc(msg) + '</span>' +
+        '<button type="button" class="btn icon ghost sm js-dismiss" aria-label="Dismiss error">' + icon('x') + '</button>';
+      root.querySelector('.js-dismiss').addEventListener('click', () => root.classList.add('hidden'));
     },
 
     /* ---------------- month selector ---------------- */
@@ -313,7 +337,17 @@
 
     /* ---------------- init ---------------- */
     async init() {
-      await db.ready;
+      try {
+        await db.ready;
+      } catch (e) {
+        console.error('IndexedDB unavailable', e);
+        this.buildChrome();
+        this.onError('Local storage (IndexedDB) could not be opened, so data cannot be saved or loaded. Check that browser storage is enabled and not blocked, then reload.');
+        this.setTheme(this.theme);
+        this.registerServiceWorker();
+        window.dispatchEvent(new CustomEvent('app:boot', { bubbles: true }));
+        return;
+      }
       this.config = db.getConfig();
       document.documentElement.setAttribute('data-theme', this.theme);
       const savedMonth = localStorage.getItem('crm:month');
@@ -376,6 +410,12 @@
       const main = body.querySelector('main.content') || document.createElement('main');
       body.insertBefore(topbar, main);
 
+      const banner = document.createElement('div');
+      banner.className = 'error-banner hidden';
+      banner.id = 'error-banner';
+      banner.setAttribute('role', 'alert');
+      main.prepend(banner);
+
       const scrim = document.createElement('div');
       scrim.className = 'sidebar-scrim';
       scrim.id = 'sidebar-scrim';
@@ -388,6 +428,17 @@
       const modalRoot = document.createElement('div');
       modalRoot.id = 'modal-root';
       body.appendChild(modalRoot);
+
+      /* Thumb-friendly bottom navigation (mobile only — hidden on desktop). */
+      const mnav = document.createElement('nav');
+      mnav.className = 'mobile-nav';
+      mnav.setAttribute('aria-label', 'Main navigation');
+      const mItems = NAV.filter(n => ['dashboard', 'leads', 'kanban', 'activities', 'calendar'].indexOf(n.page) !== -1);
+      mnav.innerHTML = mItems.map(n =>
+        '<a class="mnav-item' + (n.page === this.page ? ' active' : '') + '" href="' + n.href + '" data-nav="' + n.page + '">' +
+        icon(n.icon, 'ic', 20) + '<span>' + n.label + '</span></a>'
+      ).join('');
+      body.appendChild(mnav);
     },
 
     bindGlobal() {

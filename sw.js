@@ -3,7 +3,7 @@
    Static app shell caching for offline use.
    Data itself lives in IndexedDB and does not require network.
    ============================================================ */
-const CACHE = 'toyota-crm-v1';
+const CACHE = 'toyota-crm-v2';
 const STATIC = [
   'index.html',
   'dashboard.html', 'leads.html', 'kanban.html', 'activities.html',
@@ -13,6 +13,7 @@ const STATIC = [
   'js/utils.js', 'js/storage.js', 'js/app.js', 'js/leadview.js',
   'js/dashboard.js', 'js/leads.js', 'js/kanban.js', 'js/activities.js',
   'js/calendar.js', 'js/targets.js', 'js/reports.js', 'js/settings.js', 'js/archived.js',
+  'js/activity-service.js',
   'manifest.json',
   'assets/icons/favicon.svg',
   'assets/icons/icon-192.png',

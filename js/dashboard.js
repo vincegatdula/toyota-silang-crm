@@ -1,5 +1,8 @@
 /* ============================================================
    Toyota CRM — dashboard.js
+   KPIs, sales progress, lead generation, follow-up feed, the
+   Activities & Test Drive panel (via ActivityService) and the
+   monthly trend chart.
    ============================================================ */
 (function () {
   'use strict';
@@ -88,7 +91,7 @@
     const totalActual = actual.length;
     const remaining = Math.max(0, totalTarget - totalActual);
     const wdl = U.workingDaysLeft(mk, holidays);
-    const perDay = wdl > 0 ? (totalActual > 0 ? totalActual : 0) : 0;
+    const perDay = 0;
     const reqPerDay = wdl > 0 ? remaining / wdl : remaining;
     const ach = totalTarget > 0 ? (totalActual / totalTarget) * 100 : 0;
     const el = document.getElementById('lg-body');
@@ -161,23 +164,28 @@
       renderUpcoming(leads, acts);
     }));
 
-    // activities panel
-    const tActs = acts.filter(a => !a.completed && a.dueDate && U.diffDays(t, a.dueDate) >= 0 && U.diffDays(t, a.dueDate) <= 30);
-    const tActsOver = acts.filter(a => !a.completed && a.dueDate && U.diffDays(t, a.dueDate) < 0);
-    const sorted = tActsOver.concat(tActs).sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+    // activities & test-drive panel — reads the same ActivityService feed
+    const pend = ActivityService.sortFeed(acts.filter(a => !a.completed));
+    const shown = pend.slice(0, 8);
+    const over = shown.filter(a => a.dueDate && U.diffDays(t, a.dueDate) < 0);
     const aItem = (a) => {
-      const ov = U.diffDays(t, a.dueDate) < 0;
-      return '<button type="button" class="up-item' + (ov ? ' overdue' : '') + '" data-leadid="' + U.esc(a.leadId) + '">' +
-        '<span class="up-date"><b>' + U.esc((a.dueDate || '').slice(8, 10)) + '</b><span>' + U.esc(new Date(a.dueDate || '').toLocaleDateString('en-US', { month: 'short' })) + '</span></span>' +
+      const ov = a.dueDate && U.diffDays(t, a.dueDate) < 0;
+      return '<button type="button" class="up-item' + (ov ? ' overdue' : '') + '" data-leadid="' + U.esc(a.leadId) + '" title="' + U.esc(a.type + ' — ' + a.leadName) + '">' +
+        '<span class="up-date"><b>' + U.esc((a.dueDate || (a.activityDate || '')).slice(8, 10)) + '</b><span>' + U.esc(new Date(a.dueDate || a.activityDate).toLocaleDateString('en-US', { month: 'short' })) + '</span></span>' +
         '<span class="up-meta"><span class="up-title">' + U.esc(a.type) + ' — ' + U.esc(a.leadName || 'No lead') + '</span>' +
         '<span class="up-sub">' + U.esc(a.notes || '') + '</span></span>' +
         '<span class="badge ' + (ov ? 'badge-overdue' : 'badge-outline') + '">' + (ov ? 'overdue' : 'due ' + U.fmtDate(a.dueDate, { short: true })) + '</span>' +
         '</button>';
     };
+    const totalPending = pend.length;
     document.getElementById('up-act').innerHTML =
-      '<div class="muted small" style="margin-bottom:6px">' + (tActsOver.length ? tActsOver.length + ' overdue · ' : '') + (tActs.length) + ' due in next 30 days</div>' +
-      (sorted.length ? '<div class="upcoming-list">' + sorted.slice(0, 12).map(aItem).join('') + '</div>'
-        : '<div class="empty" style="padding:18px">No pending activities.</div>');
+      '<div class="muted small" style="margin-bottom:8px">' +
+      (totalPending ? totalPending + ' pending · ' : '') + (over.length ? over.length + ' overdue' : 'no overdue') + '</div>' +
+      (shown.length ? '<div class="upcoming-list">' + shown.map(aItem).join('') + '</div>'
+        : '<div class="empty up-empty">' + ic('activities', 'ic') +
+          '<strong>No pending activities</strong>' +
+          '<span class="muted">Add follow-ups, calls or test drives from any lead to see them here.</span></div>') +
+      '<div class="up-more"><a href="activities.html">View all activities ' + ic('chevR', 'ic') + '</a></div>';
 
     document.querySelectorAll('#up-act .up-item').forEach(b => b.addEventListener('click', () => {
       if (b.dataset.leadid) App.openLead(b.dataset.leadid);
@@ -191,7 +199,10 @@
     document.querySelectorAll('.dash-tabs [data-bucket]').forEach(c => c.classList.remove('on'));
   }
 
-  /* ---------- monthly trend chart ---------- */
+  /* ---------- monthly trend chart ----------
+     Grouped bars (New leads in red, Released in neutral slate),
+     explicit Y axis, month labels, legend and per-bar value labels.
+     Zero-data months keep a readable baseline instead of collapsing. */
   function renderTrend(leads, mk) {
     const months = [];
     for (let i = 5; i >= 0; i--) months.push(U.addMonths(mk, -i));
@@ -200,32 +211,66 @@
       const rel = leads.filter(l => db.leads.isReleased(l) && U.inMonth(l.releaseDate, m)).length;
       return { m, newL, rel };
     });
-    const max = Math.max(1, ...rows.map(r => Math.max(r.newL, r.rel)));
-    const html = '<div class="vbar">' + rows.map(r =>
-      '<div class="vb" title="' + U.monthLabel(r.m) + '">' +
-      '<div class="vb-bar" style="height:' + Math.max(3, (r.rel / max) * 110) + 'px;background:#22c55e"></div>' +
-      '<div class="vb-bar" style="height:' + Math.max(3, (r.newL / max) * 110) + 'px;background:' + (r.newL ? 'var(--red)' : 'var(--line)') + '"></div>' +
-      '<div class="vb-lbl">' + U.toMonthLabel(r.m) + '</div></div>'
-    ).join('') + '</div>' +
-      '<div class="legend" style="font-size:11px"><span class="lg"><i style="width:9px;height:9px;background:var(--red);border-radius:3px;display:inline-block"></i> New leads</span><span class="lg"><i style="width:9px;height:9px;background:#22c55e;border-radius:3px;display:inline-block"></i> Released</span></div>';
-    document.getElementById('chart-monthly').innerHTML = html;
+    const hasData = rows.some(r => r.newL + r.rel > 0);
+    const max = Math.max(4, ...rows.map(r => Math.max(r.newL, r.rel)));
+
+    const ticks = 4;
+    const labels = [];
+    for (let i = 0; i < ticks; i++) labels.push(Math.round((max * i) / (ticks - 1)));
+
+    const bar = (v, cls, lbl) =>
+      '<div class="mt-bar ' + cls + '" style="height:' + (v > 0 ? Math.max(6, Math.round((v / max) * 100)) : 2) + '%" title="' + U.esc(lbl) + ': ' + v + '">' +
+      (v > 0 ? '<span>' + v + '</span>' : '') + '</div>';
+
+    const cols = rows.map(r =>
+      '<div class="mt-col"><div class="mt-g">' +
+      bar(r.newL, 'mt-new', 'New leads') +
+      bar(r.rel, 'mt-rel', 'Released') +
+      '</div></div>'
+    ).join('');
+
+    const y = labels.map(l => '<span>' + l + '</span>').join('');
+
+    document.getElementById('chart-monthly').innerHTML =
+      (hasData
+        ? '<div class="mt-wrap">' +
+          '<div class="mt-plot">' +
+          '<div class="mt-lines"><i></i><i></i><i></i><i></i></div>' +
+          '<div class="mt-y">' + y + '</div>' +
+          '<div class="mt-columns">' + cols + '</div>' +
+          '</div>' +
+          '<div class="mt-x">' + rows.map(r => '<span>' + U.esc(U.toMonthLabel(r.m)) + '</span>').join('') + '</div>' +
+          '<div class="mt-legend"><span class="lg"><i class="lg-red"></i> New leads</span><span class="lg"><i class="lg-slate"></i> Released</span></div>' +
+          '</div>'
+        : '<div class="empty">' + ic('reports', 'ic') + '<strong>No data yet</strong>' +
+          '<span class="muted">New leads and released units will appear here by month.</span></div>');
   }
 
   /* ---------- init ---------- */
   async function refresh() {
-    const mk = App.month;
-    const [leads, acts] = await Promise.all([App.data('leads'), App.data('activities')]);
-    document.getElementById('dash-month-badge').textContent = U.monthLabel(mk);
-    document.getElementById('dash-welcome').innerHTML = 'Sales overview for <strong>' + U.monthLabel(mk) + '</strong>';
-    document.getElementById('msp-month').textContent = U.monthLabel(mk);
-    document.getElementById('lg-month').textContent = U.monthLabel(mk);
-    renderKPIs(leads, acts, mk);
-    await renderSalesProgress(leads, mk);
-    await renderLeadGen(leads, mk);
-    renderUpcoming(leads, acts);
-    renderTrend(leads, mk);
-    const demo = App.config && App.config.demoData && App.config.seeded ? true : false;
-    document.getElementById('demo-banner').classList.toggle('hidden', !demo);
+    try {
+      const mk = App.month;
+      const leadsPromise = App.load('leads');
+      let acts = [];
+      try { acts = await ActivityService.getAll(); }
+      catch (e) { console.error('Failed to load activities', e); App.onError('Could not load activities.'); }
+      const leads = await leadsPromise;
+
+      document.getElementById('dash-month-badge').textContent = U.monthLabel(mk);
+      document.getElementById('dash-welcome').innerHTML = 'Sales overview for <strong>' + U.monthLabel(mk) + '</strong>';
+      document.getElementById('msp-month').textContent = U.monthLabel(mk);
+      document.getElementById('lg-month').textContent = U.monthLabel(mk);
+      renderKPIs(leads, acts, mk);
+      try { await renderSalesProgress(leads, mk); } catch (e) { console.error(e); }
+      try { await renderLeadGen(leads, mk); } catch (e) { console.error(e); }
+      renderUpcoming(leads, acts);
+      renderTrend(leads, mk);
+      const demo = App.config && App.config.demoData && App.config.seeded ? true : false;
+      document.getElementById('demo-banner').classList.toggle('hidden', !demo);
+    } catch (e) {
+      console.error('Dashboard refresh failed', e);
+      App.onError('Dashboard could not load. Some data may be unavailable.');
+    }
   }
 
   async function boot() {
@@ -234,7 +279,9 @@
     document.addEventListener('crm:month', () => refresh());
     document.querySelectorAll('.dash-tabs [data-range]').forEach(c => c.addEventListener('click', () => {
       rangeSw(c.dataset.range);
-      Promise.all([App.data('leads'), App.data('activities')]).then(([l, a]) => renderUpcoming(l, a));
+      Promise.all([App.data('leads'), ActivityService.getAll()])
+        .then(([l, a]) => renderUpcoming(l, a))
+        .catch(e => console.error(e));
     }));
     const goF = document.querySelector('.js-gofollowup');
     if (goF) goF.addEventListener('click', () => location.href = 'leads.html');

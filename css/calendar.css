@@ -15,6 +15,7 @@
   padding: 6px; display: flex; flex-direction: column; gap: 3px; position: relative;
   background: var(--surface);
 }
+@supports selector(:has(*)) { .cal-day:has(.devent) { cursor: pointer; } }
 .cal-week:last-child .cal-day { border-bottom: none; }
 .cal-day:nth-child(7n) { border-right: none; }
 .cal-day.other { background: var(--surface-2); opacity: .65; }
@@ -55,19 +56,33 @@
 .cal-side h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 8px; }
 
 .ev-list { display: flex; flex-direction: column; max-height: 300px; overflow-y: auto; }
-.ev-row { display: flex; gap: 9px; padding: 6px 2px; border-bottom: 1px dashed var(--line-2); align-items: flex-start; font-size: 12.5px; }
+.ev-row {
+  display: flex; gap: 9px; padding: 7px 8px; border-bottom: 1px dashed var(--line-2);
+  align-items: flex-start; font-size: 12.5px; width: 100%; text-align: left; color: var(--ink);
+  background: transparent; border-radius: var(--radius-s); transition: background .1s;
+}
 .ev-row:last-child { border-bottom: none; }
+button.ev-row { cursor: pointer; }
+button.ev-row:hover { background: var(--surface-2); }
+button.ev-row:active { transform: translateY(.5px); }
+button.ev-row:focus-visible { outline-offset: -2px; }
 .ev-row .ev-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex: none; background: var(--ev-color, var(--muted)); }
 .ev-row .ev-txt { flex: 1; min-width: 0; }
 .ev-row .ev-txt b { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ev-row .ev-txt span { color: var(--muted); font-size: 11px; }
+
+/* rows inside the day-event modal keep a card feel */
+.modal .ev-list .ev-row { border: 1px solid var(--line); background: var(--surface); margin-bottom: 6px; padding: 8px 10px; }
+.modal .ev-list .ev-row:last-child { margin-bottom: 0; }
+.modal .ev-list button.ev-row:hover { border-color: var(--red); background: rgba(235,10,30,.03); }
+.modal .ev-list .ev-txt span { white-space: normal; }
 
 .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; font-size: 11px; color: var(--muted); }
 .legend .lg { display: inline-flex; align-items: center; gap: 5px; }
 .legend .lg i { width: 9px; height: 9px; border-radius: 3px; background: var(--ev-color, var(--muted)); display: inline-block; }
 
 @media (max-width: 1000px) {
-  .cal-layout { grid-template-columns: 1fr; }
+  .cal-layout { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 640px) {
   .cal-day { min-height: 64px; padding: 4px; }

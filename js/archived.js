@@ -25,14 +25,14 @@
     const tbody = document.getElementById('arch-tbody');
     tbody.innerHTML = list.map(l =>
       '<tr class="clickable" data-id="' + U.esc(l.id) + '">' +
-      '<td><span class="lead-id">' + U.esc(l.id) + '</span></td>' +
-      '<td><strong>' + U.esc(LeadView.customerName(l)) + '</strong></td>' +
-      '<td>' + U.esc(LeadView.vehicleLabel(l)) + '</td>' +
-      '<td>' + LeadView.stageBadge(l.stage) + '</td>' +
-      '<td>' + LeadView.statusBadge(l.status) + '</td>' +
-      '<td class="arch-date">' + (l.archivedDate ? U.fmtDate(l.archivedDate) : '—') + '</td>' +
-      '<td><span class="muted">' + U.esc((l.notes || '').slice(0, 80)) + '</span></td>' +
-      '<td style="text-align:right;white-space:nowrap">' +
+      '<td data-label="ID"><span class="lead-id">' + U.esc(l.id) + '</span></td>' +
+      '<td data-label="Lead"><strong>' + U.esc(LeadView.customerName(l)) + '</strong></td>' +
+      '<td data-label="Vehicle">' + U.esc(LeadView.vehicleLabel(l)) + '</td>' +
+      '<td data-label="Stage">' + LeadView.stageBadge(l.stage) + '</td>' +
+      '<td data-label="Status">' + LeadView.statusBadge(l.status) + '</td>' +
+      '<td data-label="Archived" class="arch-date">' + (l.archivedDate ? U.fmtDate(l.archivedDate) : '—') + '</td>' +
+      '<td data-label="Notes"><span class="muted">' + U.esc((l.notes || '').slice(0, 80)) + '</span></td>' +
+      '<td class="no-caption" data-label="" style="text-align:right;white-space:nowrap">' +
       '<button type="button" class="btn sm ghost archive-restore js-restore" data-id="' + U.esc(l.id) + '">' + ic('refresh') + ' Restore</button> ' +
       '<button type="button" class="btn sm danger archive-del js-del" data-id="' + U.esc(l.id) + '">' + ic('trash') + ' Delete</button>' +
       '</td></tr>'
