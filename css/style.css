@@ -144,6 +144,7 @@ body.has-sidebar.sidebar-collapsed { padding-left: var(--sidebar-wc); }
 .page-title { font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
 .topbar-spacer { flex: 1; }
 .js-menu { display: none; }
+.sidebar-x { display: none; } /* mobile drawer close — shown in responsive.css */
 
 .content { padding: 20px 22px 60px; max-width: 1500px; }
 

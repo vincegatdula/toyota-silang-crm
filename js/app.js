@@ -385,7 +385,7 @@
         '<div class="storage-note">' + icon('clock') + '<span class="nav-label">Data stored locally<br><small>IndexedDB · this device</small></span></div>' +
         '<button type="button" class="nav-item js-collapse" aria-label="Toggle sidebar">' + icon('chevL') + '<span class="nav-label">Collapse</span></button>' +
         '</div>';
-      sidebar.innerHTML = '<div class="sidebar-inner">' + brand + '<nav class="nav">' + nav + '</nav>' + footer + '</div>';
+      sidebar.innerHTML = '<div class="sidebar-inner"><button type="button" class="sidebar-x js-sideclose" aria-label="Close menu">' + icon('x') + '</button>' + brand + '<nav class="nav">' + nav + '</nav>' + footer + '</div>';
       body.insertBefore(sidebar, body.firstChild);
       document.body.classList.add('has-sidebar');
       if (this.sidebarCollapsed) document.body.classList.add('sidebar-collapsed');
@@ -444,16 +444,31 @@
     bindGlobal() {
       const sb = document.getElementById('app-sidebar');
       const scrim = document.getElementById('sidebar-scrim');
+      const isOffCanvas = () => window.matchMedia('(max-width: 1024px)').matches;
+      const sideOpen = () => sb.classList.contains('side-open');
       const toggleClass = (has) => {
-        sb.classList.toggle('side-open', has);
-        scrim.classList.toggle('show', has);
+        /* The drawer only ever exists when the sidebar is off-canvas.
+           Guarding keeps the scrim from dimming desktop layouts. */
+        const want = !!has && isOffCanvas();
+        sb.classList.toggle('side-open', want);
+        scrim.classList.toggle('show', want);
+        const m = document.querySelector('.js-menu');
+        if (m) m.setAttribute('aria-expanded', want ? 'true' : 'false');
       };
-      document.querySelector('.js-menu').addEventListener('click', () => toggleClass(!sb.classList.contains('side-open')));
-      scrim.addEventListener('click', () => toggleClass(false));
+      const closeSide = () => toggleClass(false);
+      document.querySelector('.js-menu').addEventListener('click', () => toggleClass(!sideOpen()));
+      const sideClose = document.querySelector('.js-sideclose');
+      if (sideClose) sideClose.addEventListener('click', () => closeSide());
+      scrim.addEventListener('click', () => closeSide());
       document.querySelectorAll('.nav-item').forEach(n => {
-        n.addEventListener('click', (e) => { if (sb.classList.contains('side-open')) toggleClass(false); if (n.classList.contains('js-collapse')) { e.preventDefault(); this.toggleCollapse(); } });
+        n.addEventListener('click', () => { if (sideOpen()) closeSide(); });
       });
+      /* The Collapse control has its OWN listener below. It must not inherit
+         the generic nav-item binding, or collapse would toggle twice per click
+         (open + close = no visible change). */
       document.querySelector('.js-collapse').addEventListener('click', (e) => { e.preventDefault(); this.toggleCollapse(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sideOpen()) closeSide(); });
+      window.addEventListener('resize', () => { if (!isOffCanvas() && sideOpen()) closeSide(); });
       const mprev = document.querySelector('.js-mprev');
       const mnext = document.querySelector('.js-mnext');
       const mtoday = document.querySelector('.js-mtoday');
@@ -464,10 +479,6 @@
       document.querySelector('.js-theme').addEventListener('click', () => this.setTheme(this.theme === 'dark' ? 'light' : 'dark'));
       const addBtn = document.querySelector('.js-addlead');
       if (addBtn) addBtn.addEventListener('click', () => this.addLead());
-
-      document.addEventListener('crm:changed', (e) => {
-        this.invalidate(e.detail && e.detail.table);
-      });
 
       window.addEventListener('online', () => this.setOnline(true));
       window.addEventListener('offline', () => this.setOnline(false));
@@ -506,6 +517,14 @@
   };
 
   global.App = App;
+
+  /* Invalidate the shared data cache BEFORE any page-level 'crm:changed'
+     listener runs, so listeners that re-read via App.data never snapshot a
+     stale (pre-write) promise. Registered at module load so it always
+     precedes listeners registered by page modules. */
+  document.addEventListener('crm:changed', (e) => {
+    App.invalidate(e.detail && e.detail.table);
+  });
 
   document.addEventListener('DOMContentLoaded', () => App.init());
 })(window);

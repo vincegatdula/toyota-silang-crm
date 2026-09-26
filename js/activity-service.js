@@ -28,11 +28,19 @@
      Reads through App's shared cache when available so the Activities page,
      Dashboard and Calendar all observe the same data. */
   async function getAll() {
-    const read = (global.App && global.App.data) ? (t) => global.App.data(t) : (t) => db[t].getAll();
+    /* Always re-read the persisted records so writes that triggered this call
+       (directly or via 'crm:changed') are never masked by a stale App.data
+       snapshot, regardless of event-listener ordering. */
+    const app = global.App;
+    if (app && typeof app.invalidate === 'function') {
+      app.invalidate('activities');
+      app.invalidate('leads');
+    }
+    const read = (app && app.data) ? (t) => app.data(t) : (t) => db[t].getAll();
     const [acts, leads] = await Promise.all([read('activities'), read('leads')]);
     const byId = {};
     (leads || []).forEach(l => { if (l && l.id) byId[l.id] = l; });
-    return (acts || []).map(a => {
+    const resolved = (acts || []).map(a => {
       const lead = (a && a.leadId) ? (byId[a.leadId] || null) : null;
       return Object.assign({}, a, {
         leadName: (a && a.leadName) || (lead ? leadDisplayName(lead) : ((a && a.leadId) ? 'Lead unavailable' : '—')),
@@ -41,6 +49,39 @@
         lead
       });
     });
+    return withLeadTestDrives(resolved, leads || []);
+  }
+
+  /* The New Lead / Edit Lead form stores scheduled test drives on the LEAD
+     record (testDriveDate / testDriveTime / testDriveNotes / testDriveDone)
+     rather than as activity records. Surface those here as feed entries so the
+     Dashboard card, Activities page and Calendar share ONE source of truth.
+     A lead that already has a real "Test Drive" activity is not duplicated. */
+  function withLeadTestDrives(resolved, leads) {
+    const covered = new Set();
+    resolved.forEach(a => { if (a && a.type === 'Test Drive' && a.leadId) covered.add(a.leadId); });
+    const extra = [];
+    leads.forEach(l => {
+      if (!l || !l.id || !l.testDriveDate || covered.has(l.id)) return;
+      extra.push({
+        id: 'TD-' + l.id,
+        leadId: l.id,
+        leadName: leadDisplayName(l),
+        type: 'Test Drive',
+        activityDate: l.testDriveDate,
+        dueDate: l.testDriveDate,
+        time: l.testDriveTime || '',
+        notes: l.testDriveNotes || '',
+        completed: !!l.testDriveDone,
+        completedDate: l.testDriveDone ? l.testDriveDate : '',
+        nextStep: l.nextStep || '',
+        synthetic: true,
+        lead: l,
+        leadArchived: !!l.archived,
+        leadUnavailable: false
+      });
+    });
+    return resolved.concat(extra);
   }
 
   function bucketPrio(a) {

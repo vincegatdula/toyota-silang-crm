@@ -76,9 +76,21 @@
       (a.leadArchived ? '<div class="muted small">Archived lead</div>' : '') +
       (a.leadUnavailable ? '<div class="muted small unavailable">Lead unavailable</div>' : '') +
       (a.leadId ? '<div class="muted small">' + U.esc(a.leadId) + '</div>' : '') + '</td>';
+    /* Entries synthesized from the lead's own test-drive fields are read-only:
+       completion lives on the lead record, so no check/delete/edit here. */
+    const doneCell = a.synthetic
+      ? '<td data-label="Done"><input type="checkbox" disabled' + (comp ? ' checked' : '') + ' aria-label="Test drive completed"></td>'
+      : '<td><input type="checkbox" class="act-check js-check" data-id="' + U.esc(a.id) + '"' + (comp ? ' checked' : '') + ' aria-label="Mark complete"></td>';
+    const idCell = '<td data-label="ID"><span class="lead-id">' + U.esc(a.synthetic ? 'TD·' + (a.leadId || '') : a.id) + '</span></td>';
+    const actionCell = a.synthetic
+      ? '<td class="no-caption" style="text-align:right"><span class="muted small" title="Scheduled on the lead record">on lead</span></td>'
+      : '<td class="no-caption" style="text-align:right"><div style="display:inline-flex;gap:4px">' +
+        '<button type="button" class="btn icon ghost sm js-edit" data-id="' + U.esc(a.id) + '" aria-label="Edit">' + ic('edit') + '</button>' +
+        '<button type="button" class="btn icon ghost sm js-del" data-id="' + U.esc(a.id) + '" aria-label="Delete">' + ic('trash') + '</button>' +
+        '</div></td>';
     return '<tr class="' + (comp ? 'row-done' : '') + (b.cls === 'fu-overdue' ? ' row-overdue' : '') + ' js-actrow" data-id="' + U.esc(a.id) + '" data-lead="' + U.esc(a.leadId || '') + '" tabindex="0" aria-label="Activity ' + U.esc(a.id) + (a.leadId ? ' for ' + U.esc(a.leadName) : '') + '">' +
-      '<td><input type="checkbox" class="act-check js-check" data-id="' + U.esc(a.id) + '"' + (comp ? ' checked' : '') + ' aria-label="Mark complete"></td>' +
-      '<td data-label="ID"><span class="lead-id">' + U.esc(a.id) + '</span></td>' +
+      doneCell +
+      idCell +
       leadCol +
       '<td data-label="Type"><span class="act-type-badge">' + U.esc(a.type) + '</span></td>' +
       '<td data-label="Activity date">' + U.fmtDate(a.activityDate, { short: true }) + timeStr(a) + '</td>' +
@@ -86,24 +98,25 @@
       '<td data-label="Status"><span class="fu-chip ' + b.cls + '">' + U.esc(b.label) + '</span></td>' +
       '<td data-label="Next follow-up">' + (a.nextFollowup ? U.fmtDate(a.nextFollowup, { short: true }) : '—') + '</td>' +
       '<td data-label="Notes"><span class="muted">' + U.esc(a.notes || (a.outcome ? 'Outcome: ' + a.outcome : '—')) + '</span></td>' +
-      '<td class="no-caption" style="text-align:right"><div style="display:inline-flex;gap:4px">' +
-      '<button type="button" class="btn icon ghost sm js-edit" data-id="' + U.esc(a.id) + '" aria-label="Edit">' + ic('edit') + '</button>' +
-      '<button type="button" class="btn icon ghost sm js-del" data-id="' + U.esc(a.id) + '" aria-label="Delete">' + ic('trash') + '</button>' +
-      '</div></td></tr>';
+      actionCell +
+      '</tr>';
   }
 
   function actCard(a) {
     const b = stateBadge(a);
+    const right = a.synthetic
+      ? '<span class="fu-chip ' + (a.completed ? 'fu-done' : 'fu-none') + '">' + (a.completed ? 'Completed' : 'Scheduled') + '</span>'
+      : '<input type="checkbox" class="act-check js-check" data-id="' + U.esc(a.id) + '"' + (a.completed ? ' checked' : '') + ' aria-label="Mark complete">';
     return '<div class="lead-card' + (a.completed ? ' done' : '') + '"' + (a.leadId ? ' data-lead="' + U.esc(a.leadId) + '"' : '') + '>' +
       '<div class="lc-top"><div style="min-width:0"><div class="lc-name">' + U.esc(a.type) + ' — ' + U.esc(a.leadName) + '</div>' +
-      '<div class="lc-id mono">' + U.esc(a.id) + (a.leadId ? ' · ' + U.esc(a.leadId) : '') + '</div></div>' +
-      '<input type="checkbox" class="act-check js-check" data-id="' + U.esc(a.id) + '"' + (a.completed ? ' checked' : '') + ' aria-label="Mark complete"></div>' +
+      '<div class="lc-id mono">' + U.esc(a.synthetic ? 'TD·' + a.leadId : a.id) + (a.leadId ? ' · ' + U.esc(a.leadId) : '') + '</div></div>' +
+      right + '</div>' +
       '<div class="lc-row"><span class="fu-chip ' + b.cls + '">' + U.esc(b.label) + '</span>' +
       (a.dueDate ? '<span class="small muted">Due ' + U.fmtDate(a.dueDate, { short: true }) + timeStr(a) + '</span>' : '') + '</div>' +
       (a.leadArchived ? '<div class="muted small">Archived lead</div>' : a.leadUnavailable ? '<div class="muted small unavailable">Lead unavailable</div>' : '') +
       '<div class="lc-meta"><span>' + U.esc(a.notes || a.outcome || '') + '</span>' +
-      '<span style="display:flex;gap:4px"><button type="button" class="btn icon ghost sm js-edit" data-id="' + U.esc(a.id) + '" aria-label="Edit">' + ic('edit') + '</button>' +
-      '<button type="button" class="btn icon ghost sm js-del" data-id="' + U.esc(a.id) + '" aria-label="Delete">' + ic('trash') + '</button></span></div>' +
+      (a.synthetic ? '' : '<span style="display:flex;gap:4px"><button type="button" class="btn icon ghost sm js-edit" data-id="' + U.esc(a.id) + '" aria-label="Edit">' + ic('edit') + '</button>' +
+      '<button type="button" class="btn icon ghost sm js-del" data-id="' + U.esc(a.id) + '" aria-label="Delete">' + ic('trash') + '</button></span>') + '</div>' +
       '</div>';
   }
 

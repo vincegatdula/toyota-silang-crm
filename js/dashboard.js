@@ -17,7 +17,7 @@
   /* ---------- helpers ---------- */
   function activeLeads(leads) { return leads.filter(l => !l.archived); }
   function liveDeals(leads) {
-    return leads.filter(l => !l.archived && !db.leads.isReleased(l) && l.status !== 'Lost' && l.status !== 'Cold' && l.stage !== 'Lost');
+    return leads.filter(l => !l.archived && !db.leads.isReleased(l) && !db.leads.isWon(l) && l.status !== 'Lost' && l.status !== 'Cold' && l.stage !== 'Lost');
   }
 
   function renderKPIs(leads, acts, mk) {
@@ -26,28 +26,28 @@
     const hot = deals.filter(l => l.priority === 'Hot');
     const warm = deals.filter(l => l.priority === 'Warm');
     const today = U.todayISO();
-    const dealsToClose = deals.filter(l => {
-      if (['Reservation', 'Payment', 'Approval'].includes(l.stage)) return true;
-      return l.estimatedPurchaseDate && U.diffDays(today, l.estimatedPurchaseDate) <= 30 && U.diffDays(today, l.estimatedPurchaseDate) >= 0;
-    });
+    /* Deals to close: active deals sitting at Reservation or Payment.
+       (An estimate or date-flag is NOT a committed sale.) */
+    const dealsToClose = deals.filter(l => l.stage === 'Reservation' || l.stage === 'Payment');
+    const won = leads.filter(l => db.leads.isWon(l));
     const released = leads.filter(l => db.leads.isReleased(l));
     const releasedMonth = released.filter(l => U.inMonth(l.releaseDate, mk));
-    const overdue = leads.filter(l => !l.archived && !db.leads.isReleased(l) && l.status !== 'Lost' && l.nextFollowupDate && U.isPast(l.nextFollowupDate));
+    const overdue = leads.filter(l => !l.archived && !db.leads.isReleased(l) && !db.leads.isWon(l) && l.status !== 'Lost' && l.nextFollowupDate && U.isPast(l.nextFollowupDate));
     const todayActs = acts.filter(a => a.dueDate === today && !a.completed);
     const newMonth = leads.filter(l => U.inMonth(l.dateCreated, mk) && !l.archived);
 
     const kpis = [
-      { label: 'Total Leads', val: leads.length, sub: '+ ' + newMonth.length + ' new this month', cls: 'k-blue' },
-      { label: 'Active Deals', val: deals.length, sub: 'in the pipeline now', cls: '' },
-      { label: 'Hot Leads', val: hot.length, sub: 'high priority', cls: 'k-red' },
-      { label: 'Warm Leads', val: warm.length, sub: 'needs attention', cls: 'k-amber' },
-      { label: 'Deals to Close', val: dealsToClose.length, sub: 'reservation/payment/30d', cls: 'k-amber' },
-      { label: 'Closed / Released', val: released.length, sub: releasedMonth.length + ' this month', cls: 'k-green' },
-      { label: 'Overdue Follow-ups', val: overdue.length, sub: 'needs action today', cls: (overdue.length ? 'k-red' : '') },
-      { label: "Today's Activities", val: todayActs.length, sub: 'due & pending today', cls: '' }
+      { label: 'Total Leads', val: leads.length, sub: '+ ' + newMonth.length + ' new this month', cls: 'k-blue', tip: 'Every lead record in the system.' },
+      { label: 'Active Deals', val: deals.length, sub: 'open in the pipeline', cls: '', tip: 'Not archived, not Released, not Lost/Cold, and stage is not "Deal Closed (Won)".' },
+      { label: 'Hot Leads', val: hot.length, sub: 'high priority', cls: 'k-red', tip: 'Active deals marked Hot priority.' },
+      { label: 'Warm Leads', val: warm.length, sub: 'needs attention', cls: 'k-amber', tip: 'Active deals marked Warm priority.' },
+      { label: 'Deals to Close', val: dealsToClose.length, sub: 'Reservation & Payments', cls: 'k-amber', tip: 'Active deals at the Reservation or Payment stage.' },
+      { label: 'Closed Deals', val: won.length, sub: 'stage = Deal Closed (Won)', cls: 'k-green', tip: 'Leads whose pipeline stage is "Deal Closed (Won)".' },
+      { label: 'Overdue Follow-ups', val: overdue.length, sub: 'needs action today', cls: (overdue.length ? 'k-red' : ''), tip: 'Open leads with a past follow-up date.' },
+      { label: "Today's Activities", val: todayActs.length, sub: 'due & pending today', cls: '', tip: 'Pending activities due today.' }
     ];
     document.getElementById('dash-kpis').innerHTML = kpis.map(k =>
-      '<div class="kpi ' + k.cls + '"><div class="k-label">' + k.label + '</div><div class="k-value">' + k.val + '</div><div class="k-sub">' + U.esc(k.sub) + '</div></div>'
+      '<div class="kpi ' + k.cls + '" title="' + U.esc(k.tip) + '"><div class="k-label">' + k.label + '</div><div class="k-value">' + k.val + '</div><div class="k-sub">' + U.esc(k.sub) + '</div></div>'
     ).join('');
   }
 
@@ -67,7 +67,7 @@
     el.innerHTML =
       '<div class="widget-sales">' +
       '<div class="kpi"><div class="k-label">Sales Target</div><div class="k-value">' + U.fmtNum(target) + '</div></div>' +
-      '<div class="kpi k-green"><div class="k-label">Closed</div><div class="k-value">' + U.fmtNum(closed) + '</div></div>' +
+      '<div class="kpi k-green"><div class="k-label">Released</div><div class="k-value">' + U.fmtNum(closed) + '</div></div>' +
       '<div class="kpi k-amber"><div class="k-label">Remaining</div><div class="k-value">' + U.fmtNum(remaining) + '</div></div>' +
       '<div class="kpi' + (ach >= target && target ? ' k-green' : '') + '"><div class="k-label">Achievement</div><div class="k-value">' + U.fmtPct(ach) + '</div></div>' +
       '</div>' +
@@ -133,13 +133,21 @@
     const sortKey = (a, b) => (a.nextFollowupDate || '').localeCompare(b.nextFollowupDate || '');
     byBucket.overdue.sort(sortKey); byBucket.today.sort(sortKey); byBucket['7'].sort(sortKey); byBucket['30'].sort(sortKey);
 
+    const mini = (n) => App.icon(n, 'ic8', 12);
+    const dTile = (iso) =>
+      '<span class="up-date"><b>' + U.esc(iso.slice(8, 10)) + '</b><span>' + U.esc(new Date(iso).toLocaleDateString('en-US', { month: 'short' })) + '</span></span>';
+    const meta2 = (iso, time) =>
+      '<span class="up-meta2">' + mini('calendar') + U.fmtDate(iso, { short: true }) + (time ? ' · ' + U.esc(time) : '') + '</span>';
+
     const item = (l) => {
       const overdue = fuRange(l) === 'overdue';
+      const iso = l.nextFollowupDate || '';
       return '<button type="button" class="up-item' + (overdue ? ' overdue' : '') + '" data-id="' + U.esc(l.id) + '">' +
-        '<span class="up-date"><b>' + U.esc((l.nextFollowupDate || '').slice(8, 10)) + '</b><span>' + U.esc(new Date((l.nextFollowupDate || '')).toLocaleDateString('en-US', { month: 'short' })) + '</span></span>' +
+        dTile(iso) +
         '<span class="up-meta"><span class="up-title">' + U.esc(LeadView.customerName(l)) + '</span>' +
-        '<span class="up-sub">' + U.esc(LeadView.vehicleLabel(l)) + ' · ' + U.esc(l.nextStep || 'no next step') + '</span></span>' +
-        '<span class="badge ' + (overdue ? 'badge-overdue' : '') + '">' + U.esc(l.stage) + '</span>' +
+        '<span class="up-sub">' + U.esc(LeadView.vehicleLabel(l)) + ' · ' + U.esc(l.nextStep || 'no next step') + '</span>' +
+        meta2(iso) + '</span>' +
+        '<span class="up-side"><span class="badge ' + (overdue ? 'badge-overdue' : '') + '">' + U.esc(l.stage) + '</span></span>' +
         '</button>';
     };
     const render = (list, emptyMsg, suffix) => {
@@ -170,11 +178,16 @@
     const over = shown.filter(a => a.dueDate && U.diffDays(t, a.dueDate) < 0);
     const aItem = (a) => {
       const ov = a.dueDate && U.diffDays(t, a.dueDate) < 0;
+      const iso = a.dueDate || a.activityDate || '';
+      const stBadge = a.completed ? '<span class="badge badge-released">done</span>'
+        : ov ? '<span class="badge badge-overdue">overdue</span>'
+          : '<span class="badge badge-outline">scheduled</span>';
       return '<button type="button" class="up-item' + (ov ? ' overdue' : '') + '" data-leadid="' + U.esc(a.leadId) + '" title="' + U.esc(a.type + ' — ' + a.leadName) + '">' +
-        '<span class="up-date"><b>' + U.esc((a.dueDate || (a.activityDate || '')).slice(8, 10)) + '</b><span>' + U.esc(new Date(a.dueDate || a.activityDate).toLocaleDateString('en-US', { month: 'short' })) + '</span></span>' +
+        dTile(iso) +
         '<span class="up-meta"><span class="up-title">' + U.esc(a.type) + ' — ' + U.esc(a.leadName || 'No lead') + '</span>' +
-        '<span class="up-sub">' + U.esc(a.notes || '') + '</span></span>' +
-        '<span class="badge ' + (ov ? 'badge-overdue' : 'badge-outline') + '">' + (ov ? 'overdue' : 'due ' + U.fmtDate(a.dueDate, { short: true })) + '</span>' +
+        '<span class="up-sub">' + U.esc(a.notes || '') + '</span>' +
+        meta2(iso, a.time) + '</span>' +
+        stBadge +
         '</button>';
     };
     const totalPending = pend.length;

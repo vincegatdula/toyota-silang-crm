@@ -58,7 +58,7 @@
 
     const stats = document.getElementById('rep-stats');
     const released = ALL_LEADS.filter(db.leads.isReleased);
-    const active = ALL_LEADS.filter(l => !db.leads.isReleased(l) && l.status !== 'Lost' && l.status !== 'Cold' && l.stage !== 'Lost');
+    const active = ALL_LEADS.filter(l => !db.leads.isReleased(l) && !db.leads.isWon(l) && l.status !== 'Lost' && l.status !== 'Cold' && l.stage !== 'Lost');
     const overdue = ALL_LEADS.filter(l => l.nextFollowupDate && U.isPast(l.nextFollowupDate));
     const conv = ALL_LEADS.length ? (released.length / ALL_LEADS.length) * 100 : 0;
     const avgDays = released.length ? Math.round(released.reduce((s, l) => s + (U.diffDays(l.dateCreated, l.releaseDate) || 0), 0) / released.length) : null;

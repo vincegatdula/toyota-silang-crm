@@ -54,14 +54,20 @@
       }
     });
 
+    const tdByLead = {};
+    leads.forEach(l => { if (l && l.testDriveDate) tdByLead[l.id] = l.testDriveDate; });
+
     (acts || []).forEach(a => {
-      if (!a || typeof a !== 'object') return;
+      if (!a || typeof a !== 'object' || a.synthetic) return;
       const map = {
         'Test Drive': 'testdrive', 'Meeting': 'meeting', 'Financing Application': 'financing', 'Bank Coordination': 'financing',
         'Reservation': 'reservation', 'Payment': 'payment', 'Release': 'release', 'OR/CR': 'release', 'Plate': 'release'
       };
       const type = map[a.type] || 'activity';
       const iso = a.dueDate || a.activityDate || '';
+      /* Test drives come from ONE source: the lead's own test-drive fields are
+         rendered above, so a real activity must not duplicate the same date. */
+      if (a.type === 'Test Drive' && tdByLead[a.leadId] && tdByLead[a.leadId] === iso) return;
       add(iso, type, a.type + ': ' + (a.leadName || '—') + (a.completed ? ' ✓' : ''), a.leadId || '', a.notes || a.nextStep);
     });
 

@@ -26,7 +26,7 @@
   const DEFAULTS = {
     leadSources: ['Facebook', 'Phone', 'Walk-in', 'Referral', 'TikTok', 'Messenger', 'Website', 'Existing Client', 'Other'],
     statuses: ['New', 'Contacted', 'Qualified', 'Warm', 'Hot', 'Follow-up', 'Test Drive', 'Financing', 'Reserved', 'Approved', 'Released', 'Lost', 'Cold'],
-    stages: ['New Lead', 'Contacted', 'Qualified', 'Needs Analysis', 'Vehicle Presentation', 'Test Drive', 'Quotation', 'Financing Application', 'Approval', 'Reservation', 'Payment', 'Release', 'After-Sales', 'Lost'],
+    stages: ['New Lead', 'Contacted', 'Qualified', 'Needs Analysis', 'Vehicle Presentation', 'Test Drive', 'Quotation', 'Financing Application', 'Approval', 'Reservation', 'Payment', 'Release', 'Deal Closed (Won)', 'After-Sales', 'Lost'],
     priorities: ['Hot', 'Warm', 'Cold'],
     activityTypes: ['Call', 'Messenger', 'SMS', 'Email', 'Follow-up', 'Meeting', 'Test Drive', 'Quotation', 'Financing Application', 'Bank Coordination', 'Reservation', 'Payment', 'Release', 'OR/CR', 'Plate', 'After-Sales', 'Other'],
     vehicleModels: ['Wigo', 'Raize', 'Vios', 'Corolla Cross', 'Corolla Altis', 'Camry', 'Avanza', 'Veloz', 'Rush', 'Fortuner', 'Hilux', 'HiAce', 'Land Cruiser Prado', 'Land Cruiser 300', 'GR Corolla', 'GR Yaris'],
@@ -44,6 +44,9 @@
   /* Statuses that mean the lead is a pipeline exit / not an active deal. */
   const CLOSED_LIKE = { 'Released': 1, 'Lost': 1, 'Cold': 1 };
   const RELEASED_STAGE = 'Release';
+
+  /* The pipeline stage that authoritatively marks a closed/won deal. */
+  const WON_STAGE = 'Deal Closed (Won)';
 
   /* =========================================================================
      MINIMAL IndexedDB PROMISE WRAPPER
@@ -214,6 +217,23 @@
     if (max > curN) await put('seq', { key: prefix === 'C' ? 'lead' : 'activity', value: max });
   }
 
+  /* The config's stage list may predate the "Deal Closed (Won)" stage (e.g. a
+     backup exported by an older build, or a custom stage list saved in
+     Settings). Ensure the authoritative won stage is present so the pipeline
+     never silently drops Closed/Won deals. Additive only. */
+  function ensureWonStage(rec) {
+    if (!Array.isArray(_config.stages) || _config.stages.indexOf(WON_STAGE) !== -1) return;
+    const stages = _config.stages.slice();
+    const after = stages.indexOf('Release');
+    stages.splice(after >= 0 ? after + 1 : stages.length, 0, WON_STAGE);
+    _config.stages = stages;
+    const merged = Object.assign({}, (rec && rec.config) || {}, { stages: stages.slice() });
+    const nextRec = Object.assign({}, rec || { key: 'app' }, { config: merged });
+    _settingsRecord = nextRec;
+    // persist quietly; failures must not block boot
+    put('settings', nextRec).catch(() => {});
+  }
+
   /* =========================================================================
      CONFIG / SETTINGS
      ========================================================================= */
@@ -223,6 +243,7 @@
       Object.assign(_config, DEFAULTS, (s && s.config) || {});
       if (s && s.seeded !== undefined) _config.seeded = s.seeded;
       if (s && s.demoData !== undefined) _config.demoData = s.demoData;
+      ensureWonStage(s);
       return _config;
     });
   }
@@ -250,7 +271,7 @@
       lastContactDate: '', nextFollowupDate: '', nextStep: '',
       estimatedPurchaseDate: '', vehicleInterest: '', variant: '', color: '',
       budget: '', downPayment: '', estimatedMonthly: '', financingCash: '',
-      testDriveDate: '', testDriveNotes: '', testDriveDone: false,
+      testDriveDate: '', testDriveTime: '', testDriveNotes: '', testDriveDone: false,
       reservationStatus: '', reservationDate: '', reservationAmount: '',
       paymentStatus: '', paymentDate: '', paymentDetails: '',
       releaseDate: '', orcrStatus: '', orcrDate: '', plateNumber: '', plateDate: '', afterSalesNotes: '',
@@ -267,14 +288,18 @@
     if (!lead) return false;
     if (lead.archived) return true;
     if (lead.status === 'Released' || lead.status === 'Lost' || lead.status === 'Cold') return true;
-    if (lead.stage === 'Lost') return true;
+    if (lead.stage === 'Lost' || lead.stage === WON_STAGE) return true;
     return false;
   }
   function isReleased(lead) {
     return !!lead && (lead.status === 'Released' || lead.stage === 'Release' || !!lead.releaseDate);
   }
+  /* Authoritative closed/won check: pipeline stage === "Deal Closed (Won)". */
+  function isWon(lead) {
+    return !!lead && String(lead.stage || '').trim() === WON_STAGE;
+  }
   function isActive(lead) {
-    return !!lead && !lead.archived && !isReleased(lead) && lead.status !== 'Lost' && lead.status !== 'Cold' && lead.stage !== 'Lost';
+    return !!lead && !lead.archived && !isReleased(lead) && !isWon(lead) && lead.status !== 'Lost' && lead.status !== 'Cold' && lead.stage !== 'Lost';
   }
 
   /* =========================================================================
@@ -432,8 +457,8 @@
       },
       async remove(id) { return del('leads', id); },
       normalize: normalizeLead,
-      isClosedLike, isReleased, isActive,
-      CLOSED_LIKE, RELEASED_STAGE
+      isClosedLike, isReleased, isWon, isActive,
+      CLOSED_LIKE, RELEASED_STAGE, WON_STAGE
     },
 
     activities: {

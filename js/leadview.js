@@ -278,6 +278,7 @@
 
     html += H({ t: 'Test Drive / Reservation', ic: 'calendar', f: () =>
       tx('testDriveDate', 'Test Drive Date', d('testDriveDate'), 'date') +
+      tx('testDriveTime', 'Test Drive Time', d('testDriveTime'), 'time') +
       tx('testDriveNotes', 'Test Drive Notes', d('testDriveNotes')) +
       '<div class="field" style="justify-content:end">' + cbox('testDriveDone', 'Test drive completed', d('testDriveDone')) + '</div>' +
       sel('reservationStatus', 'Reservation', [{ v: '', l: 'None' }, { v: 'Reserved', l: 'Reserved' }, { v: 'Cancelled', l: 'Cancelled' }], d('reservationStatus')) +
@@ -550,7 +551,7 @@
       '<div class="ll-grid">' +
       field('Vehicle Interest', f('vehicleInterest')) + field('Variant', f('variant')) + field('Color', f('color')) +
       field('Est. Purchase Date', lead.estimatedPurchaseDate ? U.fmtDate(lead.estimatedPurchaseDate) : '') +
-      field('Test Drive', lead.testDriveDate ? U.fmtDate(lead.testDriveDate) + (lead.testDriveDone ? ' · done' : '') + (lead.testDriveNotes ? ' · ' + lead.testDriveNotes : '') : '') +
+      field('Test Drive', lead.testDriveDate ? U.fmtDate(lead.testDriveDate) + (lead.testDriveTime ? ' · ' + U.esc(lead.testDriveTime) : '') + (lead.testDriveDone ? ' · done' : '') + (lead.testDriveNotes ? ' · ' + lead.testDriveNotes : '') : '') +
       field('Reservation', lead.reservationStatus ? (lead.reservationStatus + (lead.reservationDate ? ' · ' + U.fmtDate(lead.reservationDate) : '') + (lead.reservationAmount ? ' · ' + U.fmtMoney(lead.reservationAmount) : '')) : '') +
       field('Payment', lead.paymentStatus ? (lead.paymentStatus + (lead.paymentDate ? ' · ' + U.fmtDate(lead.paymentDate) : '') + (lead.paymentDetails ? ' · ' + lead.paymentDetails : '')) : '') +
       '</div></div>';
